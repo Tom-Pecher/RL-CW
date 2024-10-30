@@ -1,6 +1,6 @@
 
-// Top-Down FPS Enivroment
-// Version: Proof of Concept
+// TOP-DOWN FPS ENVIRONMENT
+// PROOF OF CONCEPT
 
 
 // Include libraries
@@ -32,8 +32,8 @@ struct Bullet {
         shape.setRadius(BULLET_RADIUS);
         shape.setFillColor(sf::Color::Red);
         shape.setPosition(x, y);
-        velocity.x = BULLET_SPEED * std::cos(angle);
-        velocity.y = BULLET_SPEED * std::sin(angle);
+        velocity.x = BULLET_SPEED*std::cos(angle);
+        velocity.y = BULLET_SPEED*std::sin(angle);
     }
 
     void update() {
@@ -49,7 +49,7 @@ int main() {
     // Agent setup
     sf::RectangleShape agent(sf::Vector2f(AGENT_SIZE, AGENT_SIZE));
     agent.setFillColor(sf::Color::Black);
-    agent.setPosition(WIDTH / 2, HEIGHT / 2);
+    agent.setPosition(WIDTH/2, HEIGHT/2);
 
     // Bullets
     std::vector<Bullet> bullets;
@@ -76,12 +76,12 @@ int main() {
 
         // Shooting bullets
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            sf::Vector2f agentCenter = agent.getPosition() + sf::Vector2f(AGENT_SIZE / 2, AGENT_SIZE / 2);
+            sf::Vector2f agentCenter = agent.getPosition() + sf::Vector2f(AGENT_SIZE/2, AGENT_SIZE/2);
             sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             float angle = std::atan2(mousePos.y - agentCenter.y, mousePos.x - agentCenter.x);
             bullets.emplace_back(agentCenter.x, agentCenter.y, angle);
         }
-
+    
         // Update bullets
         for (auto& bullet : bullets)
             bullet.update();
