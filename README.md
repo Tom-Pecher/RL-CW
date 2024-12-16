@@ -1,6 +1,15 @@
 # Reinforcement Learning - Bipedal Walker
 
+- [Reinforcement Learning - Bipedal Walker](#reinforcement-learning-bipedal-walker)
+   * [Getting Started](#getting-started)
+   * [Layout](#layout)
+   * [Running code](#running-code)
+      + [Available arguments](#available-arguments)
+      + [Example](#example)
+   * [Developing your agent](#developing-your-agent)
+   * [Useful git commands](#useful-git-commands)
 
+<!-- TOC --><a name="getting-started"></a>
 ## Getting Started
 
 Install the project and install dependencies
@@ -18,20 +27,51 @@ venv\Scripts\activate.bat # Windows
 pip install -r requirements.txt
 ```
 
+<!-- TOC --><a name="layout"></a>
 ## Layout
 
 The files we are working on are in the `src` directory. This contains sub-directories for everything we will be working on. These sub directories are where you should put your code.
 
+<!-- TOC --><a name="running-code"></a>
 ## Running code
 
 ```bash
 # Navigate to the src directory
-cd src 
+cd src
 
 # Run the training script
-python train.py
+python main.py
+
+# To run an agent you can use the following command
+python main.py --agent [agent-name]
 ```
 
+<!-- TOC --><a name="available-arguments"></a>
+### Available arguments
+
+| Argument | Description |
+| --- | --- |
+| --agent | The agent to train. This is required. |
+| --hardcore | Whether to use the hardcore version of the environment. |
+| --render | Whether to render the environment. |
+
+<!-- TOC --><a name="example"></a>
+### Example
+
+To run the example agent, run the following command:
+```bash
+python main.py --agent example
+```
+
+<!-- TOC --><a name="developing-your-agent"></a>
+## Developing your agent
+
+Each agent should be in a separate directory. The directory contains a `train.py` file that contains the training code for your agent.
+You can also add any other files you need for your agent, but these should be in the agent's directory.
+
+As for what the training code should look like, you can look at the `example.py` file in the `src` directory.
+
+<!-- TOC --><a name="useful-git-commands"></a>
 ## Useful git commands
 
 To push the project to git, you should follow a structure similar to this:

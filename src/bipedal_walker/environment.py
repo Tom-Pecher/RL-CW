@@ -9,14 +9,19 @@ class BipedalWalkerEnv:
     A wrapper interface for OpenAI Gym's BipedalWalker environment.
     """
 
-    def __init__(self, render_mode: str = None):
+    def __init__(self, hardcore: bool, render: bool):
         """
         Initialize the environment.
 
         Args:
-            render_mode(str): The rendering mode to use. ('human', 'rgb_array', None)
+            hardcore(bool): Whether to use the hardcore version of the environment.
+            render_mode(bool): Whether to render the environment.
         """
-        self.env = gym.make('BipedalWalker-v3', render_mode=render_mode)
+        self.env = gym.make(
+            'BipedalWalker-v3',
+            hardcore=hardcore,
+            render_mode='human' if render else 'rgb_array'
+        )
 
         # Store environment properties
         self.observation_space = self.env.observation_space
@@ -75,22 +80,16 @@ class BipedalWalkerEnv:
 
         return observation, reward, terminated, truncated, info
 
+
     def render(self):
         """Renders the environment."""
         return self.env.render()
+
 
     def close(self):
         """Closes the environment."""
         return self.env.close()
 
-    def seed(self, seed: int):
-        """
-        Sets the seed for the environment.
-
-        Args:
-            seed (int): The seed to use.
-        """
-        return self.env.seed(seed)
 
     def sample_action(self) -> np.ndarray:
         """
@@ -101,25 +100,47 @@ class BipedalWalkerEnv:
         """
         return self.env.action_space.sample()
 
+
+    def get_env_info(self) -> Dict[str, Any]:
+        """
+        Get information about the environment.
+
+        Returns:
+            dict: Environment information including dimensions and ranges
+        """
+        return {
+            'observation_dim' : self.observation_space.shape[0],
+            'action_dim'      : self.action_space.shape[0],
+            'action_low'      : self.action_space.low,
+            'action_high'     : self.action_space.high,
+            'observation_low' : self.observation_space.low,
+            'observation_high': self.observation_space.high
+        }
+
+
     @property
     def get_observation_space(self) -> spaces.Box:
         """Returns the observation space."""
         return self.observation_space
+
 
     @property
     def get_action_space(self) -> spaces.Box:
         """Returns the action space."""
         return self.action_space
 
+
     @property
     def get_current_step(self) -> int:
         """Returns the current step."""
         return self.current_step
 
+
     @property
     def get_total_reward(self) -> float:
         """Returns the total reward."""
         return self.total_reward
+
 
     @property
     def get_episode_count(self) -> int:
