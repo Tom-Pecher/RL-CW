@@ -1,0 +1,6 @@
+gym==0.26.2
+gymnasium==1.0.0
+swig==4.3.0
+stable_baselines3==2.4.0
+pygame==2.6.1
+Box2D==2.3.10
