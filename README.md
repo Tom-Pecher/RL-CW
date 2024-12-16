@@ -1,13 +1,12 @@
 # Reinforcement Learning - Bipedal Walker
 
-- [Reinforcement Learning - Bipedal Walker](#reinforcement-learning-bipedal-walker)
-   * [Getting Started](#getting-started)
-   * [Layout](#layout)
-   * [Running code](#running-code)
-      + [Available arguments](#available-arguments)
-      + [Example](#example)
-   * [Developing your agent](#developing-your-agent)
-   * [Useful git commands](#useful-git-commands)
+- [Getting Started](#getting-started)
+- [Layout](#layout)
+- [Running code](#running-code)
+   * [Available arguments](#available-arguments)
+   * [Example](#example)
+- [Developing your agent](#developing-your-agent)
+- [Useful git commands](#useful-git-commands)
 
 <!-- TOC --><a name="getting-started"></a>
 ## Getting Started
