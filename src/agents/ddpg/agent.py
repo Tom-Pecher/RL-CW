@@ -71,7 +71,7 @@ class DDPGAgent:
         if len(self.memory) < self.batch_size:
             return 0
 
-        # Sample from replay buffer with device information
+        # Sample from replay buffer
         states, actions, rewards, next_states, dones = self.memory.sample(
             self.batch_size, self.device
         )

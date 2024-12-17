@@ -24,11 +24,11 @@ class ReplayBuffer:
     def sample(self, batch_size: int, device: torch.device) -> tuple:
         transitions = random.sample(self.buffer, batch_size)
 
-        # Convert to numpy arrays efficiently
+        # Convert to numpy arrays
         batch = map(np.stack, zip(*transitions))
         state, action, reward, next_state, done = batch
 
-        # Convert numpy arrays to tensors efficiently
+        # Convert numpy arrays to tensors
         return (
             torch.FloatTensor(state).to(device),
             torch.FloatTensor(action).to(device),

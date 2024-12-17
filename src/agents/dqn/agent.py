@@ -61,14 +61,7 @@ class DQNAgent:
             return 0
 
         # Sample batch
-        states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
-
-        # Convert to tensors
-        states = torch.FloatTensor(states).to(self.device)
-        actions = torch.FloatTensor(actions).to(self.device)
-        rewards = torch.FloatTensor(rewards).to(self.device)
-        next_states = torch.FloatTensor(next_states).to(self.device)
-        dones = torch.FloatTensor(dones).to(self.device)
+        states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size, self.device)
 
         # Get current Q values
         current_q_values = self.policy_net(states)

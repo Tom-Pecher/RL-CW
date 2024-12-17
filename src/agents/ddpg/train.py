@@ -38,7 +38,7 @@ def train_agent(hardcore: bool, render: bool):
 
     episode_trigger_count = 100
 
-    # Record a video every 200 episodes
+    # Setup video recording
     env = RecordVideo(
         base_env.env,
         video_dir,

@@ -32,6 +32,24 @@ pip install -r requirements.txt
 
 The files we are working on are in the `src` directory. This contains sub-directories for everything we will be working on. These sub directories are where you should put your code.
 
+For example, the `src/agents/ddpg` directory contains the code for the DDPG agent. You do not need to follow this exactly; but it can serve as an example.
+
+> [!NOTE]
+> The `common` directory contains code that is shared between all agents.
+
+```bash
+src
+├── agents
+│   ├── common
+│   │   ├── actor.py
+│   │   ├── critic.py
+│   │   └── replay_buffer.py
+│   └── ddpg
+│        ├── init.py  # Contains any code that should be run before the agent is initialized (populating caches, etc.)
+│        ├── agent.py # Contains the code for the agent itself
+│        └── train.py # Contains the code for the training script (train_agent())
+```
+
 <!-- TOC --><a name="running-code"></a>
 # Running code
 
@@ -53,7 +71,7 @@ python main.py --agent [agent-name]
 | --- | --- |
 | --agent | The agent to train. This is required. |
 | --hardcore | Whether to use the hardcore version of the environment. |
-| --render | Whether to render the environment. |
+| --render | Whether to render the environment. (note: periodic videos should still be recorded).|
 
 <!-- TOC --><a name="example"></a>
 ## Example
@@ -69,8 +87,8 @@ python main.py --agent example
 Each agent should be in a separate directory. The directory contains a `train.py` file that contains the training code for your agent.
 You can also add any other files you need for your agent, but these should be in the agent's directory.
 
-As for what the training code should look like, you can look at the `example.py` file in the `src` directory, or the `dqn` example.
-These examples will both save progress at intervals of 200.
+As for what the training code should look like, you can look at the `example.py` file in the `src` directory, or either of the `dqn` and `ddpg` examples.
+These examples will both save progress at intervals of 100.
 
 <!-- TOC --><a name="connecting-with-wandb"></a>
 # Connecting with WandB
@@ -84,6 +102,7 @@ Then go to the [authorize page](https://wandb.ai/authorize) to create an API key
 ```bash
 wandb login
 ```
+
 Paste your API key in here.
 
 The runs should now all be backed up on WandB.
