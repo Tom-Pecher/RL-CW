@@ -16,6 +16,8 @@ def train_agent(hardcore: bool, render: bool):
     Trains the DDPG agent.
     """
 
+    num_episodes = 1000
+
     # Initialize WandB
     wandb.init(
         project="bipedal-walker",
@@ -23,7 +25,7 @@ def train_agent(hardcore: bool, render: bool):
             "algorithm": "DDPG",
             "environment": "BipedalWalker-v3",
             "hardcore": hardcore,
-            "num_episodes": 1000,
+            "num_episodes": num_episodes,
         }
     )
 
@@ -40,7 +42,7 @@ def train_agent(hardcore: bool, render: bool):
     env = RecordVideo(
         base_env.env,
         video_dir,
-        episode_trigger = lambda ep: ep % episode_trigger_count == 0,
+        episode_trigger = lambda ep: (ep % episode_trigger_count == 0) or (ep == num_episodes - 1),
         name_prefix="ddpg"
     )
 
@@ -107,7 +109,7 @@ def train_agent(hardcore: bool, render: bool):
             wandb.log({"best_reward": best_reward})
 
         # Save periodic checkpoints
-        if (episode) % episode_trigger_count == 0:
+        if (episode % episode_trigger_count == 0) or (episode == num_episodes - 1):
             model_dir = "models"
             os.makedirs(model_dir, exist_ok=True)
 
