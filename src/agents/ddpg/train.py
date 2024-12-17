@@ -56,7 +56,6 @@ def train_agent(hardcore: bool, render: bool):
 
     agent = DDPGAgent(state_dim, action_dim, max_action, device)
 
-    num_episodes = 1000
     best_reward = float('-inf')
 
     for episode in range(num_episodes):

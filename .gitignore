@@ -3,8 +3,7 @@ venv
 videos/
 models/
 wandb/
-.ropeproject
-.zed
+output/
 .pyc
 .pyo
 *.egg-info
