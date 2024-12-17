@@ -6,7 +6,7 @@ from bipedal_walker.environment import BipedalWalkerEnv
 
 def train_agent(hardcore: bool, render: bool):
     """
-    Runs an example agent with a single episode.
+    Trains the DDPG agent.
     """
     env = BipedalWalkerEnv(hardcore, render)
 

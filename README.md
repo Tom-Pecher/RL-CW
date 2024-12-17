@@ -68,7 +68,7 @@ python main.py --agent example
 Each agent should be in a separate directory. The directory contains a `train.py` file that contains the training code for your agent.
 You can also add any other files you need for your agent, but these should be in the agent's directory.
 
-As for what the training code should look like, you can look at the `example.py` file in the `src` directory.
+As for what the training code should look like, you can look at the `example.py` file in the `src` directory, or the `dqn` example.
 
 <!-- TOC --><a name="useful-git-commands"></a>
 ## Useful git commands
