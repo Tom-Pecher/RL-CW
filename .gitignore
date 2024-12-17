@@ -1,4 +1,11 @@
 __pycache__/
 venv
+videos/
+models/
+wandb/
+.ropeproject
+.zed
 .pyc
 .pyo
+*.egg-info
+*.egg

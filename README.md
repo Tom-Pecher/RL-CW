@@ -1,15 +1,16 @@
 # Reinforcement Learning - Bipedal Walker
 
-- [Getting Started](#getting-started)
+- [Getting started](#getting-started)
 - [Layout](#layout)
 - [Running code](#running-code)
    * [Available arguments](#available-arguments)
    * [Example](#example)
 - [Developing your agent](#developing-your-agent)
+- [Connecting with WandB](#connecting-with-wandb)
 - [Useful git commands](#useful-git-commands)
 
 <!-- TOC --><a name="getting-started"></a>
-## Getting Started
+# Getting Started
 
 Install the project and install dependencies
 ```bash
@@ -27,12 +28,12 @@ pip install -r requirements.txt
 ```
 
 <!-- TOC --><a name="layout"></a>
-## Layout
+# Layout
 
 The files we are working on are in the `src` directory. This contains sub-directories for everything we will be working on. These sub directories are where you should put your code.
 
 <!-- TOC --><a name="running-code"></a>
-## Running code
+# Running code
 
 ```bash
 # Navigate to the src directory
@@ -46,7 +47,7 @@ python main.py --agent [agent-name]
 ```
 
 <!-- TOC --><a name="available-arguments"></a>
-### Available arguments
+## Available arguments
 
 | Argument | Description |
 | --- | --- |
@@ -55,7 +56,7 @@ python main.py --agent [agent-name]
 | --render | Whether to render the environment. |
 
 <!-- TOC --><a name="example"></a>
-### Example
+## Example
 
 To run the example agent, run the following command:
 ```bash
@@ -63,15 +64,32 @@ python main.py --agent example
 ```
 
 <!-- TOC --><a name="developing-your-agent"></a>
-## Developing your agent
+# Developing your agent
 
 Each agent should be in a separate directory. The directory contains a `train.py` file that contains the training code for your agent.
 You can also add any other files you need for your agent, but these should be in the agent's directory.
 
 As for what the training code should look like, you can look at the `example.py` file in the `src` directory, or the `dqn` example.
+These examples will both save progress at intervals of 200.
+
+<!-- TOC --><a name="connecting-with-wandb"></a>
+# Connecting with WandB
+The example agents use Weights and Biases ([WandB](https://wandb.ai/home)) to track progress and back up all videos and data.
+
+WandB should be installed if you have created your virtual environment and installed everything in `requirements.txt` (see [Getting started](#getting-started))
+
+To setup wandb, firstly sign up for an account on https://wandb.ai/site:
+
+Then go to the [authorize page](https://wandb.ai/authorize) to create an API key. You can then leave this page open, and run the following command in a terminal (in your virtual environment):
+```bash
+wandb login
+```
+Paste your API key in here.
+
+The runs should now all be backed up on WandB.
 
 <!-- TOC --><a name="useful-git-commands"></a>
-## Useful git commands
+# Useful git commands
 
 To push the project to git, you should follow a structure similar to this:
 
