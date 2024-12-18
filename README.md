@@ -35,7 +35,7 @@ The files we are working on are in the `src` directory. This contains sub-direct
 For example, the `src/agents/ddpg` directory contains the code for the DDPG agent. You do not need to follow this exactly; but it can serve as an example.
 
 > [!NOTE]
-> The `common` directory contains code that is shared between all agents.
+> The `common` directory contains code that is shared between all agents. You can add any code you want to this directory, but it should be generic enough to be used by all agents.
 
 ```bash
 src
