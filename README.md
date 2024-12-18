@@ -32,6 +32,9 @@ pip install -r requirements.txt
 
 The files we are working on are in the `src` directory. This contains sub-directories for everything we will be working on. These sub directories are where you should put your code.
 
+> [!WARNING]
+> Please do not modify the `main.py` file other than to add your own agent: it could be difficult to merge changes.
+
 For example, the `src/agents/ddpg` directory contains the code for the DDPG agent. You do not need to follow this exactly; but it can serve as an example.
 
 > [!NOTE]

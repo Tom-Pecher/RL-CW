@@ -1,8 +1,7 @@
 """
 This is the main entry point for the project.
-Please do not modify this file.
-
-Instead, to run your agent, use the `train.py` script in the respective agent directory.
+Please do not modify this file other than to add your own agent. 
+All training code should be in the respective agent directory.
 """
 
 import argparse
