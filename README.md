@@ -1,15 +1,16 @@
 # Reinforcement Learning - Bipedal Walker
 
-- [Getting Started](#getting-started)
+- [Getting started](#getting-started)
 - [Layout](#layout)
 - [Running code](#running-code)
    * [Available arguments](#available-arguments)
    * [Example](#example)
 - [Developing your agent](#developing-your-agent)
+- [Connecting with WandB](#connecting-with-wandb)
 - [Useful git commands](#useful-git-commands)
 
 <!-- TOC --><a name="getting-started"></a>
-## Getting Started
+# Getting Started
 
 Install the project and install dependencies
 ```bash
@@ -27,12 +28,30 @@ pip install -r requirements.txt
 ```
 
 <!-- TOC --><a name="layout"></a>
-## Layout
+# Layout
 
 The files we are working on are in the `src` directory. This contains sub-directories for everything we will be working on. These sub directories are where you should put your code.
 
+For example, the `src/agents/ddpg` directory contains the code for the DDPG agent. You do not need to follow this exactly; but it can serve as an example.
+
+> [!NOTE]
+> The `common` directory contains code that is shared between all agents. You can add any code you want to this directory, but it should be generic enough to be used by all agents.
+
+```bash
+src
+├── agents
+│   ├── common
+│   │   ├── actor.py
+│   │   ├── critic.py
+│   │   └── replay_buffer.py
+│   └── ddpg
+│        ├── init.py  # Contains any code that should be run before the agent is initialized (populating caches, etc.)
+│        ├── agent.py # Contains the code for the agent itself
+│        └── train.py # Contains the code for the training script (train_agent())
+```
+
 <!-- TOC --><a name="running-code"></a>
-## Running code
+# Running code
 
 ```bash
 # Navigate to the src directory
@@ -46,16 +65,16 @@ python main.py --agent [agent-name]
 ```
 
 <!-- TOC --><a name="available-arguments"></a>
-### Available arguments
+## Available arguments
 
 | Argument | Description |
 | --- | --- |
 | --agent | The agent to train. This is required. |
 | --hardcore | Whether to use the hardcore version of the environment. |
-| --render | Whether to render the environment. |
+| --render | Whether to render the environment. (note: periodic videos should still be recorded).|
 
 <!-- TOC --><a name="example"></a>
-### Example
+## Example
 
 To run the example agent, run the following command:
 ```bash
@@ -63,15 +82,33 @@ python main.py --agent example
 ```
 
 <!-- TOC --><a name="developing-your-agent"></a>
-## Developing your agent
+# Developing your agent
 
 Each agent should be in a separate directory. The directory contains a `train.py` file that contains the training code for your agent.
 You can also add any other files you need for your agent, but these should be in the agent's directory.
 
-As for what the training code should look like, you can look at the `example.py` file in the `src` directory.
+As for what the training code should look like, you can look at the `example.py` file in the `src` directory, or either of the `dqn` and `ddpg` examples.
+These examples will both save progress at intervals of 100.
+
+<!-- TOC --><a name="connecting-with-wandb"></a>
+# Connecting with WandB
+The example agents use Weights and Biases ([WandB](https://wandb.ai/home)) to track progress and back up all videos and data.
+
+WandB should be installed if you have created your virtual environment and installed everything in `requirements.txt` (see [Getting started](#getting-started))
+
+To setup wandb, firstly sign up for an account on https://wandb.ai/site:
+
+Then go to the [authorize page](https://wandb.ai/authorize) to create an API key. You can then leave this page open, and run the following command in a terminal (in your virtual environment):
+```bash
+wandb login
+```
+
+Paste your API key in here.
+
+The runs should now all be backed up on WandB.
 
 <!-- TOC --><a name="useful-git-commands"></a>
-## Useful git commands
+# Useful git commands
 
 To push the project to git, you should follow a structure similar to this:
 

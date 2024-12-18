@@ -1,4 +1,10 @@
 __pycache__/
 venv
+videos/
+models/
+wandb/
+output/
 .pyc
 .pyo
+*.egg-info
+*.egg
