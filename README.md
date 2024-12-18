@@ -41,12 +41,14 @@ For example, the `src/agents/ddpg` directory contains the code for the DDPG agen
 src
 ├── agents
 │   ├── common
+│   │   ├── __init__.py  # Contains any code that should be run when importing the common module
 │   │   ├── actor.py
 │   │   ├── critic.py
 │   │   └── replay_buffer.py
 │   └── ddpg
-│        ├── init.py  # Contains any code that should be run before the agent is initialized (populating caches, etc.)
+│        ├── __init__.py  # Contains any code that should be run before the agent is initialized (populating caches, etc.)
 │        ├── agent.py # Contains the code for the agent itself
+│        ├── record.py # Contains the code for recording the agent
 │        └── train.py # Contains the code for the training script (train_agent())
 ```
 
