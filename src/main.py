@@ -4,8 +4,10 @@ Please do not modify this file other than to add your own agent.
 All training code should be in the respective agent directory.
 """
 
+
 import argparse
 from sys import stderr
+
 
 def main():
     """
@@ -43,13 +45,17 @@ def main():
             from agents.ppo.train import train_agent
             agent = train_agent(args.hardcore, args.render)
 
+        case 'sac':
+            from agents.sac.train import train_agent
+            agent = train_agent(args.hardcore, args.render)
+
         case 'td3':
             from agents.td3.train import train_agent
             agent = train_agent(args.hardcore, args.render)
 
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
-            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo, td3]", file=stderr)
+            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo, sac, td3]", file=stderr)
             return
 
 if __name__ == '__main__':

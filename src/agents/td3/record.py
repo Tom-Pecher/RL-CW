@@ -3,7 +3,6 @@ Record a video of the agent.
 """
 
 import torch
-import os
 
 from bipedal_walker.environment import BipedalWalkerEnv
 from agents.td3.agent import TD3Agent
