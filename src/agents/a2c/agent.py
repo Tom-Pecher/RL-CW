@@ -39,7 +39,7 @@ class A2CAgent:
             action = self.actor(state)
             # Add exploration noise during training
             if self.training:
-                noise = torch.randn_like(action) * 0.1
+                noise = torch.randn_like(action) * self.noise_level
                 action = torch.clamp(action + noise, -self.max_action, self.max_action)
             return action.cpu().numpy().flatten()
 
