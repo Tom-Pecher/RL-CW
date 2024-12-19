@@ -1,11 +1,8 @@
-from abc import abstractmethod
+from abc import ABC,abstractmethod
 from gym.wrappers.record_video import RecordVideo
 
 
-class Agent:
-    def __init__(self,env) -> None:
-        self.env = env 
-        self.agent_name = "agent"
+class Agent(ABC):
 
     @abstractmethod
     def train(self) -> None:
@@ -15,22 +12,22 @@ class Agent:
     def select_action(self,state):
         pass
 
-    def record_agent(self, output_folder: str = "ouput") -> None:
-        # Setup video recording
-        record_env = RecordVideo(
-            self.env,
-            video_folder=output_folder,
-            episode_trigger=lambda _: True,
-            name_prefix=self.agent_name
-        )
+    @abstractmethod
+    def get_agent_name() -> str:
+        raise NotImplementedError("Get agent name not implemented")
 
+    def record_agent(self, video_env) -> None:
+        """
+            In order for this to work efficient with neural networks the option of 
+            Initialization with pretrained model weight should be used included
+        """
         # Run one episode
-        state, _ = record_env.reset()
+        state, _ = video_env.reset()
         episode_reward = 0
 
         while True:
             action = self.select_action(state)
-            next_state, reward, terminated, truncated, _ = record_env.step(action)
+            next_state, reward, terminated, truncated, _ = video_env.step(action)
             done = terminated or truncated
 
             state = next_state
@@ -39,4 +36,4 @@ class Agent:
             if done:
                 break
 
-        record_env.close()
+        video_env.close()
