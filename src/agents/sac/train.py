@@ -93,8 +93,8 @@ def train_agent(hardcore: bool, render: bool):
             "buffer_size": len(agent.memory)
         })
         print(f"Episode {episode + 1}/{num_episodes}, "
-              f"Reward: {episode_reward:.2f}, "
-              f"Avg Loss: {avg_loss:.4f}")
+            f"Reward: {episode_reward:.2f}, "
+            f"Avg Loss: {avg_loss:.4f}")
 
         # Save best model
         if episode_reward > best_reward:

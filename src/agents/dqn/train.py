@@ -91,9 +91,9 @@ def train_agent(hardcore: bool, render: bool):
             "buffer_size": len(agent.memory)
         })
         print(f"Log: Episode {episode + 1}/{num_episodes}, "
-              f"Reward: {episode_reward:.2f}, "
-              f"Avg loss: {avg_loss:.4f}, "
-              f"Epsilon: {agent.epsilon:.4f}")
+            f"Reward: {episode_reward:.2f}, "
+            f"Avg loss: {avg_loss:.4f}, "
+            f"Epsilon: {agent.epsilon:.4f}")
 
         # Save best model
         if episode_reward > best_reward:
@@ -101,9 +101,9 @@ def train_agent(hardcore: bool, render: bool):
             model_dir = "models"
             os.makedirs(os.path.join(model_dir, "dqn"), exist_ok=True)
             torch.save(agent.policy_net.state_dict(),
-                        f"{model_dir}/dqn/best_policy.pth")
+                       f"{model_dir}/dqn/best_policy.pth")
             torch.save(agent.target_net.state_dict(),
-                        f"{model_dir}/dqn/best_target.pth")
+                       f"{model_dir}/dqn/best_target.pth")
             wandb.log({"best_reward": best_reward})
 
 
