@@ -20,6 +20,7 @@ class A2CAgent:
         self.gamma = 0.99
         self.lr = 3e-4
         self.entropy_coef = 0.01
+        self.noise_level = 0.1
 
         # Actor and Critic models
         self.actor = Actor(state_dim, action_dim, max_action).to(device)
