@@ -41,6 +41,10 @@ def main():
             from agents.dqn.train import train_agent
             agent = train_agent(args.hardcore, args.render)
 
+        case 'drq_v2':
+            from agents.drq_v2.train import train_agent
+            agent = train_agent(args.hardcore, args.render)
+
         case 'ppo':
             from agents.ppo.train import train_agent
             agent = train_agent(args.hardcore, args.render)
@@ -55,7 +59,6 @@ def main():
 
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
-            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo, sac, td3]", file=stderr)
             return
 
 if __name__ == '__main__':
