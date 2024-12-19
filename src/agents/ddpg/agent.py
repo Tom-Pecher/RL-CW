@@ -11,7 +11,9 @@ from agents.common.critic import Critic
 from agents.common.replay_buffer import ReplayBuffer
 
 class DDPGAgent:
-    def __init__(self, state_dim, action_dim, max_action, device):
+    def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
+        """ Initialize the DDPG agent. """
+
         self.device = device
         self.max_action = max_action
 
@@ -39,11 +41,20 @@ class DDPGAgent:
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.actor_lr)
 
-        self.memory = ReplayBuffer(100000)
+        self.memory = ReplayBuffer(1000000)
         self.total_it = 0
 
 
-    def select_action(self, state):
+    def select_action(self, state: any) -> any:
+        """
+        Select an action based on the current state.
+
+        Args:
+            state (any): The current state.
+
+        Returns:
+            any: The action to take.
+        """
         with torch.no_grad():
             state = torch.FloatTensor(state).reshape(1, -1).to(self.device)
             action = self.actor(state)
@@ -64,7 +75,13 @@ class DDPGAgent:
             return action.cpu().numpy().flatten()
 
 
-    def train(self):
+    def train(self) -> float:
+        """
+        Perform a training step.
+
+        Returns:
+            float: The critic loss.
+        """
         self.training = True
         self.total_it += 1
 

@@ -33,7 +33,7 @@ def train_agent(hardcore: bool, render: bool):
     base_env = BipedalWalkerEnv(hardcore, render)
 
     # Create output dir for videos
-    video_dir = "videos"
+    video_dir = "videos/ddpg"
     os.makedirs(video_dir, exist_ok=True)
 
     episode_trigger_count = 100
@@ -43,7 +43,7 @@ def train_agent(hardcore: bool, render: bool):
         base_env.env,
         video_dir,
         episode_trigger = lambda ep: (ep % episode_trigger_count == 0) or (ep == num_episodes - 1),
-        name_prefix="ddpg"
+        name_prefix="video"
     )
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -126,7 +126,7 @@ def train_agent(hardcore: bool, render: bool):
             # Log videos to WandB
             wandb.log({
                 "video": wandb.Video(
-                    f"{video_dir}/ddpg-episode-{episode}.mp4",
+                    f"{video_dir}/video-episode-{episode}.mp4",
                     format="mp4"
                 )
             })
