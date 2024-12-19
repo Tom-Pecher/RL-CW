@@ -24,4 +24,4 @@ class Critic(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, state, action):
-        x = torch.cat([state, action], dim=-1)
+        return self.network(torch.cat([state, action], 1))
