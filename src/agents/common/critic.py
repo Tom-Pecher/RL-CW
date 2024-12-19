@@ -25,4 +25,3 @@ class Critic(nn.Module):
 
     def forward(self, state, action):
         x = torch.cat([state, action], dim=-1)
-        return self.network(x)
