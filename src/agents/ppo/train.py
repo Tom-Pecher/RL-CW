@@ -2,13 +2,10 @@
 Training script for the PPO agent.
 """
 
-from bipedal_walker.environment import BipedalWalkerEnv
+from agent import Agent
 
-def train_agent(hardcore: bool, render: bool):
-    """
-    Trains the PPO agent.
-    """
-    env = BipedalWalkerEnv(hardcore, render)
 
-    # TODO: Implement PPO
-    raise NotImplementedError
+class PPOAgent(Agent):
+    def __init__(self,hardcore: bool, render: bool, env) -> None:
+        self.env = env 
+        pass
