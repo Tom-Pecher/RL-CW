@@ -18,5 +18,11 @@ class Actor(nn.Module):
             nn.Tanh()
         )
 
+        # Initialize weights
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         return self.max_action * self.network(x)

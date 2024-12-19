@@ -17,5 +17,12 @@ class Critic(nn.Module):
             nn.Linear(256, 1)
         )
 
+        # Initialize weights
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, state, action):
-        return self.network(torch.cat([state, action], 1))
+        x = torch.cat([state, action], dim=-1)
+        return self.network(x)
