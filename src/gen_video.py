@@ -21,8 +21,8 @@ def main():
             parser.print_help()
             return
 
-        case 'actor-critic':
-            from agents.actor_critic.record import record_agent
+        case 'a2c':
+            from agents.a2c.record import record_agent
             record_agent(args.model, args.hardcore)
 
         case 'ddpg':
