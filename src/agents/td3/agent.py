@@ -25,11 +25,11 @@ class TD3Agent:
         self.policy_noise = 0.2
         self.noise_clip = 0.5
         self.exploration_noise = 0.1
-        self.batch_size = 100
+        self.batch_size = 256
         self.policy_delay = 2
 
-        self.actor_lr = 1e-3
-        self.critic_lr = 1e-3
+        self.actor_lr = 3e-4
+        self.critic_lr = 3e-4
 
         self.training = False
         self.total_it = 0
@@ -94,14 +94,13 @@ class TD3Agent:
 
         with torch.no_grad():
             # Select action according to policy and add clipped noise
-            noise = (
-                torch.randn_like(actions) * self.policy_noise
-            ).clamp(-self.noise_clip, self.noise_clip)
-            next_actions = (
-                self.actor_target(next_states) + noise
-            ).clamp(-self.max_action, self.max_action)
-
-            # Compute the target Q value using the minimum of two critics
+            noise = torch.randn_like(actions) * self.policy_noise
+            noise = noise.clamp(-self.noise_clip, self.noise_clip)
+            
+            next_actions = self.actor_target(next_states) + noise
+            next_actions = next_actions.clamp(-self.max_action, self.max_action)
+            
+            # Compute the target Q value
             target_Q1 = self.critic_target_1(next_states, next_actions)
             target_Q2 = self.critic_target_2(next_states, next_actions)
             target_Q = torch.min(target_Q1, target_Q2)

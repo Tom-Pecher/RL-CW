@@ -1,5 +1,5 @@
 """
-Training script for the TD3 agent.
+Training script for the DrQ-v2 agent.
 """
 
 import torch
@@ -7,14 +7,14 @@ import os
 import wandb
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.td3.agent import TD3Agent
+from agents.sac.agent import SACAgent
 
 from gym.wrappers.record_video import RecordVideo
 
 
 def train_agent(hardcore: bool, render: bool):
     """
-    Trains the TD3 agent.
+    Trains the DrQ-v2 agent.
     """
 
     num_episodes = 1000
@@ -23,7 +23,7 @@ def train_agent(hardcore: bool, render: bool):
     wandb.init(
         project="bipedal-walker",
         config={
-            "algorithm": "TD3",
+            "algorithm": "DrQ-v2",
             "environment": "BipedalWalker-v3",
             "hardcore": hardcore,
             "num_episodes": num_episodes,
@@ -34,7 +34,7 @@ def train_agent(hardcore: bool, render: bool):
     base_env = BipedalWalkerEnv(hardcore, render)
 
     # Create output dir for videos
-    video_dir = "videos/td3"
+    video_dir = "videos/drq_v2"
     os.makedirs(video_dir, exist_ok=True)
 
     episode_trigger_count = 100
@@ -55,7 +55,7 @@ def train_agent(hardcore: bool, render: bool):
     action_dim = env_info['action_dim']
     max_action = float(env_info['action_high'][0])
 
-    agent = TD3Agent(state_dim, action_dim, max_action, device)
+    agent = SACAgent(state_dim, action_dim, max_action, device)
 
     best_reward = float('-inf')
 
@@ -66,7 +66,7 @@ def train_agent(hardcore: bool, render: bool):
         steps = 0
 
         while True:
-            action = agent.select_action(state, noise=True)
+            action = agent.select_action(state, evaluate=False)
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
@@ -100,13 +100,13 @@ def train_agent(hardcore: bool, render: bool):
         if episode_reward > best_reward:
             best_reward = episode_reward
             model_dir = "models"
-            os.makedirs(os.path.join(model_dir, "td3"), exist_ok=True)
+            os.makedirs(os.path.join(model_dir, "drq_v2"), exist_ok=True)
             torch.save(agent.actor.state_dict(),
-                       f"{model_dir}/td3/best_actor.pth")
+                       f"{model_dir}/drq_v2/best_actor.pth")
             torch.save(agent.critic_1.state_dict(),
-                       f"{model_dir}/td3/best_critic_1.pth")
+                       f"{model_dir}/drq_v2/best_critic_1.pth")
             torch.save(agent.critic_2.state_dict(),
-                       f"{model_dir}/td3/best_critic_2.pth")
+                       f"{model_dir}/drq_v2/best_critic_2.pth")
             wandb.log({"best_reward": best_reward})
 
         # Save periodic checkpoints
@@ -114,9 +114,9 @@ def train_agent(hardcore: bool, render: bool):
             model_dir = "models"
             os.makedirs(model_dir, exist_ok=True)
 
-            checkpoint_path_actor = f"{model_dir}/td3/ep_{episode}_actor.pth"
-            checkpoint_path_critic1 = f"{model_dir}/td3/ep_{episode}_critic1.pth"
-            checkpoint_path_critic2 = f"{model_dir}/td3/ep_{episode}_critic2.pth"
+            checkpoint_path_actor = f"{model_dir}/drq_v2/ep_{episode}_actor.pth"
+            checkpoint_path_critic1 = f"{model_dir}/drq_v2/ep_{episode}_critic1.pth"
+            checkpoint_path_critic2 = f"{model_dir}/drq_v2/ep_{episode}_critic2.pth"
 
             # Save checkpoints
             torch.save(agent.actor.state_dict(), checkpoint_path_actor)
@@ -138,4 +138,4 @@ def train_agent(hardcore: bool, render: bool):
 
     wandb.finish()
     env.close()
-    return agent 
+    return agent
