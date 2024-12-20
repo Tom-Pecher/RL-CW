@@ -46,6 +46,9 @@ def main():
         case 'sac':
             from agents.sac.train import train_agent
 
+        case 'sunrise':
+            from agents.sunrise.train import train_agent
+
         case 'td3':
             from agents.td3.train import train_agent
 
