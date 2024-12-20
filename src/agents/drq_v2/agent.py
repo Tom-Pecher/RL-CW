@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import copy
 
 from agents.common.utils import schedule
-from agents.common.shared_encoder import SharedEncoder
+from agents.common.encoder import Encoder
 from agents.sac.agent import SACAgent
 
 
@@ -26,8 +26,8 @@ class DrQv2Agent(SACAgent):
         self.noise_level = 0.1
         
         # Initialize shared encoder
-        self.encoder = SharedEncoder(state_dim).to(device)
-        self.encoder_target = SharedEncoder(state_dim).to(device)
+        self.encoder = Encoder(state_dim).to(device)
+        self.encoder_target = Encoder(state_dim).to(device)
         self.encoder_target.load_state_dict(self.encoder.state_dict())
         
         # Use specific architecture for actor and critic

@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 
-class SharedEncoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(self, state_dim):
         super().__init__()
         self.trunk = nn.Sequential(

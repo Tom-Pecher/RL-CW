@@ -21,7 +21,7 @@ def train_agent(hardcore: bool, render: bool):
 
     # Initialize WandB
     wandb.init(
-        project="bipedal-walker-td3",
+        project="bipedal-walker",
         config={
             "algorithm": "TD3",
             "environment": "BipedalWalker-v3",
