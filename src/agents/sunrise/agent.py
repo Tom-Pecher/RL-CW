@@ -9,9 +9,9 @@ import torch.nn.functional as F
 import numpy as np
 import copy
 
+from agents.common.replay_buffer import ReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
 from agents.common.critic import Critic
-from agents.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 
 class SUNRISEAgent:
     def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
@@ -38,7 +38,7 @@ class SUNRISEAgent:
         self.critics = []
         self.critic_targets = []
         self.critic_optimizers = []
-
+        
         for _ in range(self.num_critics):
             critic = Critic(state_dim, action_dim).to(device)
             self.critics.append(critic)
@@ -53,15 +53,7 @@ class SUNRISEAgent:
         self.log_alpha = torch.zeros(1, requires_grad=True, device=device)
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
-        # Replace standard replay buffer with PER
-        self.memory = PrioritizedReplayBuffer(
-            capacity=1000000,
-            state_dim=state_dim,
-            action_dim=action_dim,
-            alpha=0.6,
-            beta_start=0.4,
-            beta_frames=100000
-        )
+        self.memory = ReplayBuffer(1000000)
 
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> np.ndarray:
         """Select an action using UCB exploration."""
@@ -101,15 +93,13 @@ class SUNRISEAgent:
         if len(self.memory) < self.batch_size:
             return 0
 
-        # Sample from replay buffer with importance sampling weights
-        states, actions, rewards, next_states, dones, indices, weights = self.memory.sample(
+        # Sample from replay buffer
+        states, actions, rewards, next_states, dones = self.memory.sample(
             self.batch_size, self.device
         )
 
         # Update critics
         total_critic_loss = 0
-        td_errors = []  # Store TD errors for priority updates
-        
         with torch.no_grad():
             next_actions, next_log_probs = self.actor.sample(next_states)
             
@@ -121,37 +111,20 @@ class SUNRISEAgent:
             target_qs = torch.stack(target_qs, dim=0)
             
             # Weighted Bellman backup
-            weights_softmax = F.softmax(-target_qs / self.temperature, dim=0)
-            target_q = (weights_softmax * target_qs).sum(dim=0) - self.log_alpha.exp() * next_log_probs
+            weights = F.softmax(-target_qs / self.temperature, dim=0)
+            target_q = (weights * target_qs).sum(dim=0) - self.log_alpha.exp() * next_log_probs
             target_q = rewards + (1 - dones) * self.gamma * target_q
 
         # Update each critic
-        critic_losses = []
-        td_errors = []
-        for critic, optimizer in zip(self.critics, self.critic_optimizers):
+        for i, (critic, optimizer) in enumerate(zip(self.critics, self.critic_optimizers)):
             current_q = critic(states, actions)
-            critic_loss = (weights * F.mse_loss(current_q, target_q, reduction='none')).mean()
-
+            critic_loss = F.mse_loss(current_q, target_q)
+            
             optimizer.zero_grad()
             critic_loss.backward()
             optimizer.step()
-
-            critic_losses.append(critic_loss.item())
             
-            # Calculate TD errors for this critic
-            with torch.no_grad():
-                td_error = torch.abs(current_q - target_q).squeeze()
-                td_errors.append(td_error)
-
-        # Use mean TD error across all critics for priorities
-        mean_td_error = torch.stack(td_errors).mean(dim=0)
-        
-        # Ensure we have the correct shape and convert to numpy
-        new_priorities = mean_td_error.detach().cpu().numpy()
-        assert new_priorities.ndim == 1, f"Priorities should be 1D, got shape {new_priorities.shape}"
-        new_priorities = new_priorities + 1e-6  # Small constant to prevent zero priorities
-        
-        self.memory.update_priorities(indices, new_priorities)
+            total_critic_loss += critic_loss.item()
 
         # Update actor
         actions_new, log_probs = self.actor.sample(states)
@@ -179,11 +152,11 @@ class SUNRISEAgent:
         for critic, critic_target in zip(self.critics, self.critic_targets):
             self._soft_update(critic, critic_target)
 
-        return sum(critic_losses) / self.num_critics
+        return total_critic_loss / self.num_critics
 
     def _soft_update(self, source: nn.Module, target: nn.Module) -> None:
         """Perform soft update of target network parameters."""
         for param, target_param in zip(source.parameters(), target.parameters()):
             target_param.data.copy_(
                 self.tau * param.data + (1 - self.tau) * target_param.data
-            ) 
+            )
