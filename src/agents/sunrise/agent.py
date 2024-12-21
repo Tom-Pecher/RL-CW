@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 import copy
 
-from agents.common.replay_buffer import ReplayBuffer
+from agents.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
 from agents.common.critic import Critic
 
@@ -53,7 +53,15 @@ class SUNRISEAgent:
         self.log_alpha = torch.zeros(1, requires_grad=True, device=device)
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
-        self.memory = ReplayBuffer(1000000)
+        # Initialize replay buffer
+        self.memory = PrioritizedReplayBuffer(
+            capacity=1000000,
+            state_dim=state_dim,
+            action_dim=action_dim,
+            alpha=0.6,
+            beta=0.4,
+            beta_increment=0.001
+        )
 
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> np.ndarray:
         """Select an action using UCB exploration."""
@@ -81,11 +89,11 @@ class SUNRISEAgent:
             # Calculate mean and std of Q-values
             mean_q = q_values.mean(dim=0)
             std_q = q_values.std(dim=0)
-            
+
             # UCB action selection
             ucb_values = mean_q + self.ucb_lambda * std_q
             best_action_idx = ucb_values.argmax()
-            
+
             return actions[best_action_idx].cpu().numpy().flatten()
 
     def train(self) -> float:
@@ -93,8 +101,8 @@ class SUNRISEAgent:
         if len(self.memory) < self.batch_size:
             return 0
 
-        # Sample from replay buffer
-        states, actions, rewards, next_states, dones = self.memory.sample(
+        # Sample from prioritized replay buffer
+        states, actions, rewards, next_states, dones, weights, indices = self.memory.sample(
             self.batch_size, self.device
         )
 
@@ -102,28 +110,33 @@ class SUNRISEAgent:
         total_critic_loss = 0
         with torch.no_grad():
             next_actions, next_log_probs = self.actor.sample(next_states)
-            
+
             # Get target Q-values from all critics
             target_qs = []
             for critic_target in self.critic_targets:
                 target_q = critic_target(next_states, next_actions)
                 target_qs.append(target_q)
             target_qs = torch.stack(target_qs, dim=0)
-            
+
             # Weighted Bellman backup
             weights = F.softmax(-target_qs / self.temperature, dim=0)
             target_q = (weights * target_qs).sum(dim=0) - self.log_alpha.exp() * next_log_probs
             target_q = rewards + (1 - dones) * self.gamma * target_q
 
-        # Update each critic
+        # Update critics with importance sampling weights
         for i, (critic, optimizer) in enumerate(zip(self.critics, self.critic_optimizers)):
             current_q = critic(states, actions)
-            critic_loss = F.mse_loss(current_q, target_q)
+            critic_loss = (F.mse_loss(current_q, target_q, reduction='none') * weights).mean()
             
             optimizer.zero_grad()
             critic_loss.backward()
             optimizer.step()
             
+            # Store TD errors as priorities
+            with torch.no_grad():
+                td_errors = torch.abs(current_q - target_q).cpu().numpy()
+            
+            self.memory.update_priorities(indices, td_errors)
             total_critic_loss += critic_loss.item()
 
         # Update actor
