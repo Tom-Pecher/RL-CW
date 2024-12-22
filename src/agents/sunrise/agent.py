@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 import copy
 
-from agents.common.prioritized_replay_buffer import PrioritizedReplayBuffer
+from agents.common.replay_buffer import ReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
 from agents.common.critic import Critic
 
@@ -54,14 +54,7 @@ class SUNRISEAgent:
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
         # Initialize replay buffer
-        self.memory = PrioritizedReplayBuffer(
-            capacity=1000000,
-            state_dim=state_dim,
-            action_dim=action_dim,
-            alpha=0.6,
-            beta=0.4,
-            beta_increment=0.001
-        )
+        self.memory = ReplayBuffer(1000000)
 
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> np.ndarray:
         """Select an action using UCB exploration."""
@@ -101,8 +94,8 @@ class SUNRISEAgent:
         if len(self.memory) < self.batch_size:
             return 0
 
-        # Sample from prioritized replay buffer
-        states, actions, rewards, next_states, dones, weights, indices = self.memory.sample(
+        # Sample from replay buffer
+        states, actions, rewards, next_states, dones = self.memory.sample(
             self.batch_size, self.device
         )
 
@@ -123,20 +116,15 @@ class SUNRISEAgent:
             target_q = (weights * target_qs).sum(dim=0) - self.log_alpha.exp() * next_log_probs
             target_q = rewards + (1 - dones) * self.gamma * target_q
 
-        # Update critics with importance sampling weights
-        for i, (critic, optimizer) in enumerate(zip(self.critics, self.critic_optimizers)):
+        # Update each critic
+        for critic, optimizer in zip(self.critics, self.critic_optimizers):
             current_q = critic(states, actions)
-            critic_loss = (F.mse_loss(current_q, target_q, reduction='none') * weights).mean()
-            
+            critic_loss = F.mse_loss(current_q, target_q)
+
             optimizer.zero_grad()
             critic_loss.backward()
             optimizer.step()
             
-            # Store TD errors as priorities
-            with torch.no_grad():
-                td_errors = torch.abs(current_q - target_q).cpu().numpy()
-            
-            self.memory.update_priorities(indices, td_errors)
             total_critic_loss += critic_loss.item()
 
         # Update actor
