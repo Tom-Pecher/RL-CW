@@ -41,10 +41,13 @@ class PolicyNetwork(nn.Module):
         """
         works out the mean and std of the policy network 
         """
+        # range for clamping, (has significant effect on convergence)
+        upper_bound = 2
+        lower_bound = -20
         # forward_mean = max_action * tanh(1/N sum of state policies)
         for_mean = self.max_action * torch.tanh(self.mean(self.policy(state)))  
 
-        clamped_log_std = self.log_std.clamp(min= -20,max=2)  # range should allow decent convergence quickly
+        clamped_log_std = self.log_std.clamp(min=lower_bound,max=upper_bound)  # range should allow decent convergence quickly
         std = clamped_log_std.exp().expand_as(for_mean)
         return for_mean, std
 
