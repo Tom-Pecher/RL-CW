@@ -53,9 +53,13 @@ def main():
             from agents.td3.train import train_agent
             agent = train_agent(args.hardcore, args.render)
 
+        case 'trpo':
+            from agents.trpo.train import train_agent
+            agent = train_agent(args.hardcore, args.render)
+
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
-            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo, sac, td3]", file=stderr)
+            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo, sac, td3, trpo]", file=stderr)
             return
 
 if __name__ == '__main__':
