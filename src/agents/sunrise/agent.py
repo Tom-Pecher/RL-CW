@@ -17,12 +17,12 @@ class SUNRISEAgent:
     def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
         self.device = device
         self.max_action = max_action
-        
+
         # SUNRISE specific parameters
         self.num_critics = 5  # Ensemble size
         self.temperature = 20.0  # Temperature for weighted Bellman backup
         self.ucb_lambda = 1.0  # UCB exploration bonus coefficient
-        
+
         # Standard SAC parameters
         self.gamma = 0.99
         self.tau = 0.005
@@ -33,17 +33,20 @@ class SUNRISEAgent:
 
         # Initialize actor
         self.actor = GaussianPolicy(state_dim, action_dim, max_action).to(device)
-        
+        self.actor.load_state_dict(torch.load("models/sunrise/ep_800_actor.pth", map_location=device, weights_only=True))
+
+
         # Initialize ensemble of critics and their targets
         self.critics = []
         self.critic_targets = []
         self.critic_optimizers = []
-        
-        for _ in range(self.num_critics):
+
+        for i in range(self.num_critics):
             critic = Critic(state_dim, action_dim).to(device)
             self.critics.append(critic)
             self.critic_targets.append(copy.deepcopy(critic))
             self.critic_optimizers.append(optim.Adam(critic.parameters(), lr=self.critic_lr))
+            self.critics[i].load_state_dict(torch.load(f"models/sunrise/ep_800_critic_{i}.pth", map_location=device, weights_only=True))
 
         # Initialize actor optimizer
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
@@ -63,7 +66,7 @@ class SUNRISEAgent:
             if evaluate:
                 mean, _ = self.actor(state)
                 return mean.cpu().numpy().flatten()
-            
+
             # Sample multiple actions
             num_samples = 10
             actions = []
@@ -71,14 +74,14 @@ class SUNRISEAgent:
                 action, _ = self.actor.sample(state)
                 actions.append(action)
             actions = torch.cat(actions, dim=0)
-            
+
             # Get Q-values from all critics
             q_values = []
             for critic in self.critics:
                 q = critic(state.repeat(num_samples, 1), actions)
                 q_values.append(q)
             q_values = torch.stack(q_values, dim=0)
-            
+
             # Calculate mean and std of Q-values
             mean_q = q_values.mean(dim=0)
             std_q = q_values.std(dim=0)
@@ -124,7 +127,7 @@ class SUNRISEAgent:
             optimizer.zero_grad()
             critic_loss.backward()
             optimizer.step()
-            
+
             total_critic_loss += critic_loss.item()
 
         # Update actor
@@ -135,7 +138,7 @@ class SUNRISEAgent:
             q_values.append(q)
         q_values = torch.stack(q_values, dim=0)
         q_mean = q_values.mean(dim=0)
-        
+
         actor_loss = (self.log_alpha.exp() * log_probs - q_mean).mean()
 
         self.actor_optimizer.zero_grad()

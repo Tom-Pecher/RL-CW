@@ -17,7 +17,7 @@ def train_agent(hardcore: bool, render: bool):
     Trains the Sunrise agent.
     """
 
-    num_episodes = 1000
+    num_episodes = 10000
 
     # Initialize WandB
     wandb.init(

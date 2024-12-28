@@ -31,6 +31,19 @@ class SACAgent:
         self.critic_1 = Critic(state_dim, action_dim).to(device)
         self.critic_2 = Critic(state_dim, action_dim).to(device)
 
+        # Try to load pre-trained models if they exist
+        try:
+            self.actor.load_state_dict(torch.load("models/sac/ep_800_actor.pth", map_location=device, weights_only=True))
+            self.critic_1.load_state_dict(torch.load("models/sac/ep_800_critic1.pth", map_location=device, weights_only=True))
+            self.critic_2.load_state_dict(torch.load("models/sac/ep_800_critic2.pth", map_location=device, weights_only=True))
+            print("Successfully loaded pre-trained models")
+        except FileNotFoundError as e:
+            print(f"Could not load pre-trained models: {e}")
+            print("Starting with fresh models")
+        except Exception as e:
+            print(f"Error loading models: {e}")
+            print("Starting with fresh models")
+
         self.critic_target_1 = copy.deepcopy(self.critic_1)
         self.critic_target_2 = copy.deepcopy(self.critic_2)
 
@@ -122,11 +135,6 @@ class SACAgent:
         self._soft_update(self.critic_1, self.critic_target_1)
         self._soft_update(self.critic_2, self.critic_target_2)
 
-        # Update schedulers with their respective losses
-        self.actor_scheduler.step(actor_loss.item())
-        self.critic_1_scheduler.step(critic_loss_1.item())
-        self.critic_2_scheduler.step(critic_loss_2.item())
-
         return critic_loss_1.item() + critic_loss_2.item()
 
     def _soft_update(self, source: nn.Module, target: nn.Module) -> None:
@@ -135,3 +143,16 @@ class SACAgent:
             target_param.data.copy_(
                 self.tau * param.data + (1 - self.tau) * target_param.data
             )
+
+    def validate_models(self):
+        """Validate that models are loaded and producing reasonable outputs"""
+        try:
+            test_state = torch.zeros((1, self.actor.state_dim)).to(self.device)
+            test_action, _ = self.actor.sample(test_state)
+            test_q1 = self.critic_1(test_state, test_action)
+            test_q2 = self.critic_2(test_state, test_action)
+            print(f"Model validation - Action shape: {test_action.shape}, Q values: {test_q1.item():.3f}, {test_q2.item():.3f}")
+            return True
+        except Exception as e:
+            print(f"Model validation failed: {e}")
+            return False
