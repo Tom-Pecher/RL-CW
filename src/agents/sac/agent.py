@@ -8,15 +8,22 @@ import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
 import copy
+from typing import Dict
 
+from agent import Agent
 from agents.common.replay_buffer import ReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
 
 
-class SACAgent:
-    def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
+class SACAgent(Agent):
+    def __init__(self,env_info: Dict[str,any], device: torch.device) -> None:
+
         self.device = device
-        self.max_action = max_action
+
+        state_dim = env_info['observation_dim']
+        action_dim = env_info['action_dim']
+        self.max_action = float(env_info['action_high'][0])
+
 
         # Training hyperparameters
         self.gamma = 0.99
@@ -27,7 +34,7 @@ class SACAgent:
         self.alpha_lr = 3e-4
 
         # Initialize networks
-        self.actor = GaussianPolicy(state_dim, action_dim, max_action).to(device)
+        self.actor = GaussianPolicy(state_dim, action_dim, self.max_action).to(device)
         self.critic_1 = nn.Sequential(
             nn.Linear(state_dim + action_dim, 256),
             nn.ReLU(),
@@ -58,6 +65,36 @@ class SACAgent:
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
         self.memory = ReplayBuffer(1000000)
+ 
+    @staticmethod
+    def get_agent_name() -> str:
+        return "sac"
+ 
+    def load_agent(self, model_path: str | Dict[str, str]) -> bool:
+        
+        if isinstance(model_path,str):
+            # It might be worth try catching it 
+            self.actor.load_state_dict(torch.load(model_path, map_location=self.device))
+            self.actor.eval()
+            return True 
+
+        if not model_path: # for some reason this checks if a dict is empty  
+            return False
+
+        for path, path_type in model_path: 
+            match path_type:
+                case "actor":
+                    self.actor.load_state_dict(torch.load(path, map_location=self.device))
+                    self.actor.eval()
+                case "critic_1":
+                    self.critic_1.load_state_dict(torch.load(path, map_location=self.device))
+                    self.critic_1.eval()
+                case "critic_2":
+                    self.critic_2.load_state_dict(torch.load(path, map_location=self.device))
+                    self.critic_2.eval()
+                case _:
+                    raise ValueError("Invalid network name.") 
+        return True   
 
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> np.ndarray:
         """Select an action from the policy."""

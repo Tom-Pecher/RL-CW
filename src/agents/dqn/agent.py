@@ -2,6 +2,8 @@
 The implementation of the deep Q-learning agent.
 """
 
+from typing import Dict
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,6 +11,7 @@ import random
 import numpy as np
 
 from agents.common.replay_buffer import ReplayBuffer
+from agent import Agent
 
 class DQN(nn.Module):
     def __init__(self, input_dim, output_dim) -> None:
@@ -24,14 +27,16 @@ class DQN(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-class DQNAgent:
-    def __init__(self, state_dim, action_dim, device):
+class DQNAgent(Agent):
+    def __init__(self,env_info: Dict[str,any], device):
+
         self.device = device
-        self.action_dim = action_dim
+        self.action_dim =env_info['action_dim']
+        state_dim = env_info['observation_dim']
 
         # Create neural networks
-        self.policy_net = DQN(state_dim, action_dim).to(device)
-        self.target_net = DQN(state_dim, action_dim).to(device)
+        self.policy_net = DQN(state_dim, self.action_dim).to(device)
+        self.target_net = DQN(state_dim, self.action_dim).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         # Hyperparameters
@@ -46,6 +51,18 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
         self.memory = ReplayBuffer(100000)
         self.steps = 0
+
+    @staticmethod
+    def get_agent_name() -> str:
+        return "dqn"
+
+    def load_agent(self,model_path: str | Dict[str,str]) -> bool:
+        if isinstance(model_path,str):
+            self.policy_net.load_state_dict(torch.load(model_path, map_location=self.device))
+            self.policy_net.eval()
+            return True
+        return False
+
 
     def select_action(self, state):
         if random.random() < self.epsilon:

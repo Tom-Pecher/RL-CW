@@ -50,12 +50,7 @@ def train_agent(hardcore: bool, render: bool):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    env_info = base_env.get_env_info()
-    state_dim = env_info['observation_dim']
-    action_dim = env_info['action_dim']
-    max_action = float(env_info['action_high'][0])
-
-    agent = SACAgent(state_dim, action_dim, max_action, device)
+    agent = SACAgent(base_env.get_env_info(), device)
 
     best_reward = float('-inf')
 

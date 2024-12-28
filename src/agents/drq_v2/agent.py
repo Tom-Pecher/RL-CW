@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import copy
+from typing import Dict
 
 from agents.common.utils import schedule
 from agents.common.encoder import Encoder
@@ -12,8 +13,10 @@ from agents.sac.agent import SACAgent
 
 
 class DrQv2Agent(SACAgent):
-    def __init__(self, state_dim, action_dim, max_action, device):
-        super().__init__(state_dim, action_dim, max_action, device)
+    def __init__(self,env_info: Dict[str,any], device):
+        super().__init__(env_info, device)
+        state_dim = env_info['observation_dim']
+        action_dim = env_info['action_dim']
 
         # Override SAC's tau
         self.tau = self.critic_target_tau = 0.01
@@ -50,6 +53,17 @@ class DrQv2Agent(SACAgent):
         self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
         
+    @staticmethod
+    def get_agent_name() -> str:
+        return "drq_v2"
+ 
+    def load_agent(self, model_path: str | Dict[str, str]) -> bool:
+        # Nothing else is being saved so ignoring encoder (change if you want)
+        # Ps are you sure this is write your saving actor critic1/2 but never
+        # seem to be using them just actor and critic (i could be stupid)
+        return super().load_agent(model_path)
+
+
     def augment(self, x):
         """Apply random shifts for data augmentation."""
         noise = torch.randn_like(x) * self.noise_level

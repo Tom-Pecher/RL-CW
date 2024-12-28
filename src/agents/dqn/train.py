@@ -45,11 +45,8 @@ def train_agent(hardcore: bool, render: bool):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    env_info = base_env.get_env_info()
-    state_dim = env_info['observation_dim']
-    action_dim = env_info['action_dim']
 
-    agent = DQNAgent(state_dim, action_dim, device)
+    agent = DQNAgent(base_env.get_env_info(), device)
 
     num_episodes = 1000
     best_reward = float('-inf')

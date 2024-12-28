@@ -7,18 +7,21 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
+from agent import Agent
 from agents.common.actor import Actor
 from agents.common.critic import Critic
 from agents.common.replay_buffer import ReplayBuffer
 
 
-class TD3Agent:
-    def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
+class TD3Agent(Agent):
+    def __init__(self,env_info: Dict[str,any], device: torch.device) -> None:
         """ Initialize the TD3 agent. """
 
         self.device = device
-        self.max_action = max_action
 
+        state_dim = env_info['observation_dim']
+        action_dim = env_info['action_dim']
+        self.max_action = float(env_info['action_high'][0])
         # Training hyperparameters
         self.gamma = 0.99
         self.tau = 0.005
@@ -35,8 +38,8 @@ class TD3Agent:
         self.total_it = 0
 
         # Actor
-        self.actor = Actor(state_dim, action_dim, max_action).to(device)
-        self.actor_target = Actor(state_dim, action_dim, max_action).to(device)
+        self.actor = Actor(state_dim, action_dim, self.max_action).to(device)
+        self.actor_target = Actor(state_dim, action_dim, self.max_action).to(device)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
 
@@ -52,6 +55,37 @@ class TD3Agent:
         self.critic_optimizer_2 = optim.Adam(self.critic_2.parameters(), lr=self.critic_lr)
 
         self.memory = ReplayBuffer(1000000)
+ 
+    @staticmethod
+    def get_agent_name() -> str:
+        return "td3"
+ 
+    def load_agent(self, model_path: str | Dict[str, str]) -> bool:
+        
+        if isinstance(model_path,str):
+            # It might be worth try catching it 
+            self.actor.load_state_dict(torch.load(model_path, map_location=self.device))
+            self.actor.eval()
+            return True 
+
+        if not model_path: # for some reason this checks if a dict is empty  
+            return False
+
+        for path, path_type in model_path: 
+            match path_type:
+                case "actor":
+                    self.actor.load_state_dict(torch.load(path, map_location=self.device))
+                    self.actor.eval()
+                case "critic_1":
+                    self.critic_1.load_state_dict(torch.load(path, map_location=self.device))
+                    self.critic_1.eval()
+                case "critic_2":
+                    self.critic_2.load_state_dict(torch.load(path, map_location=self.device))
+                    self.critic_2.eval()
+                case _:
+                    raise ValueError("Invalid network name.") 
+        return True   
+
 
     def select_action(self, state: any, noise: bool = False) -> any:
         """
