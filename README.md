@@ -1,5 +1,7 @@
 # Reinforcement Learning - Bipedal Walker
 
+<video src='https://github.com/user-attachments/assets/c8108b63-52f4-4a51-89ff-9f501e97cdca' width=180/>
+
 - [Getting started](#getting-started)
 - [Layout](#layout)
 - [Running code](#running-code)
