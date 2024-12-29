@@ -12,7 +12,7 @@ from agents.sac.agent import SACAgent
 from gym.wrappers.record_video import RecordVideo
 
 
-def train_agent(hardcore: bool, render: bool):
+def train_agent(hardcore: bool, render: bool, device: torch.device):
     """
     Trains the DrQ-v2 agent.
     """
@@ -47,7 +47,6 @@ def train_agent(hardcore: bool, render: bool):
         name_prefix="video"
     )
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
     agent = SACAgent(base_env.get_env_info(), device)

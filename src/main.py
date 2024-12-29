@@ -7,7 +7,7 @@ All training code should be in the respective agent directory.
 
 import argparse
 from sys import stderr
-
+import torch
 
 def main():
     """
@@ -19,6 +19,16 @@ def main():
     parser.add_argument('--hardcore', action='store_true', help='Whether to use the hardcore version of the environment.')
     parser.add_argument('--render', action='store_true', help='Whether to render the environment.')
     args = parser.parse_args()
+    
+    # get right device
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device('cpu')
+    else:
+        device = torch.device('cpu')
+
+
 
     match args.agent:
         case '':
@@ -53,7 +63,7 @@ def main():
             print(f"Invalid agent: {args.agent}", file=stderr)
             return
 
-    agent = train_agent(args.hardcore, args.render)
+    agent = train_agent(args.hardcore, args.render, device)
 
 if __name__ == '__main__':
     main()

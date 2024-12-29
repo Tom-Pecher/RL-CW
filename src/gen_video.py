@@ -17,12 +17,19 @@ def main():
     parser.add_argument('--agent', type=str, default='', help='The agent to train.')
     parser.add_argument('--hardcore', action='store_true', help='Whether to use the hardcore version of the environment.')
     parser.add_argument('--model', type=str, default='', help='The path to the model file.')
-    parser.add_argument('--output-folder', type=str, default='output', help='The video output location.')
+    parser.add_argument('--output_folder', type=str, default='output', help='The video output location.')
     args = parser.parse_args()
 
     base_env = BipedalWalkerEnv(hardcore=args.hardcore, render=False)
     env_info = base_env.get_env_info()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # get right device
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device('cpu') # I don't know why but cpu is faster for my mac 
+    else:
+        device = torch.device('cpu')
+
 
     match args.agent:
         case '':
@@ -61,7 +68,7 @@ def main():
     # Setup video recording
     video_env = RecordVideo(
         base_env.env,
-        video_folder=args.video_folder,
+        video_folder=args.output_folder,
         episode_trigger=lambda _: True,
         name_prefix=agent.get_agent_name()
     )

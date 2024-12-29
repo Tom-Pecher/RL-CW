@@ -11,7 +11,7 @@ from agents.ddpg.agent import DDPGAgent
 
 from gym.wrappers.record_video import RecordVideo
 
-def train_agent(hardcore: bool, render: bool):
+def train_agent(hardcore: bool, render: bool, device: torch.device):
     """
     Trains the DDPG agent.
     """
@@ -46,7 +46,6 @@ def train_agent(hardcore: bool, render: bool):
         name_prefix="video"
     )
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
 

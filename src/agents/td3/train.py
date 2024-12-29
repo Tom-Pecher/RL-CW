@@ -12,7 +12,7 @@ from agents.td3.agent import TD3Agent
 from gym.wrappers.record_video import RecordVideo
 
 
-def train_agent(hardcore: bool, render: bool):
+def train_agent(hardcore: bool, render: bool,device: torch.device):
     """
     Trains the TD3 agent.
     """
@@ -47,15 +47,9 @@ def train_agent(hardcore: bool, render: bool):
         name_prefix="video"
     )
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    env_info = base_env.get_env_info()
-    state_dim = env_info['observation_dim']
-    action_dim = env_info['action_dim']
-    max_action = float(env_info['action_high'][0])
-
-    agent = TD3Agent(state_dim, action_dim, max_action, device)
+    agent = TD3Agent(base_env.get_env_info(), device)
 
     best_reward = float('-inf')
 
