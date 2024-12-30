@@ -11,7 +11,7 @@ import copy
 
 from agents.common.replay_buffer import ReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
-
+from agents.common.critic import Critic
 
 class SACAgent:
     def __init__(self, state_dim: int, action_dim: int, max_action: float, device: torch.device) -> None:
@@ -28,21 +28,21 @@ class SACAgent:
 
         # Initialize networks
         self.actor = GaussianPolicy(state_dim, action_dim, max_action).to(device)
-        self.critic_1 = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 1)
-        ).to(device)
+        self.critic_1 = Critic(state_dim, action_dim).to(device)
+        self.critic_2 = Critic(state_dim, action_dim).to(device)
 
-        self.critic_2 = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 1)
-        ).to(device)
+        # Try to load pre-trained models if they exist
+        try:
+            self.actor.load_state_dict(torch.load("models/sac/ep_800_actor.pth", map_location=device, weights_only=True))
+            self.critic_1.load_state_dict(torch.load("models/sac/ep_800_critic1.pth", map_location=device, weights_only=True))
+            self.critic_2.load_state_dict(torch.load("models/sac/ep_800_critic2.pth", map_location=device, weights_only=True))
+            print("Successfully loaded pre-trained models")
+        except FileNotFoundError as e:
+            print(f"Could not load pre-trained models: {e}")
+            print("Starting with fresh models")
+        except Exception as e:
+            print(f"Error loading models: {e}")
+            print("Starting with fresh models")
 
         self.critic_target_1 = copy.deepcopy(self.critic_1)
         self.critic_target_2 = copy.deepcopy(self.critic_2)
@@ -59,6 +59,8 @@ class SACAgent:
 
         self.memory = ReplayBuffer(1000000)
 
+        self.max_grad_norm = 1.0  # Add gradient clipping threshold
+
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> np.ndarray:
         """Select an action from the policy."""
         with torch.no_grad():
@@ -68,7 +70,10 @@ class SACAgent:
                 return mean.cpu().numpy().flatten()
             else:
                 action, _ = self.actor.sample(state)
-                return action.cpu().numpy().flatten()
+                action = action.cpu().numpy().flatten()
+                # Add extra exploration noise during training
+                noise = np.random.normal(0, 0.1, size=action.shape)
+                return np.clip(action + noise, -self.max_action, self.max_action)
 
     def train(self) -> float:
         """Perform one iteration of training."""
@@ -83,13 +88,13 @@ class SACAgent:
         # Update critics
         with torch.no_grad():
             next_actions, next_log_probs = self.actor.sample(next_states)
-            target_Q1 = self.critic_target_1(torch.cat([next_states, next_actions], dim=1))
-            target_Q2 = self.critic_target_2(torch.cat([next_states, next_actions], dim=1))
+            target_Q1 = self.critic_target_1(next_states, next_actions)
+            target_Q2 = self.critic_target_2(next_states, next_actions)
             target_Q = torch.min(target_Q1, target_Q2) - self.log_alpha.exp() * next_log_probs
             target_Q = rewards + (1 - dones) * self.gamma * target_Q
 
-        current_Q1 = self.critic_1(torch.cat([states, actions], dim=1))
-        current_Q2 = self.critic_2(torch.cat([states, actions], dim=1))
+        current_Q1 = self.critic_1(states, actions)
+        current_Q2 = self.critic_2(states, actions)
 
         critic_loss_1 = F.mse_loss(current_Q1, target_Q)
         critic_loss_2 = F.mse_loss(current_Q2, target_Q)
@@ -97,23 +102,26 @@ class SACAgent:
         # Update first critic
         self.critic_1_optimizer.zero_grad()
         critic_loss_1.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic_1.parameters(), self.max_grad_norm)
         self.critic_1_optimizer.step()
 
         # Update second critic
         self.critic_2_optimizer.zero_grad()
         critic_loss_2.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic_2.parameters(), self.max_grad_norm)
         self.critic_2_optimizer.step()
 
         # Update actor
         actions_new, log_probs = self.actor.sample(states)
-        Q1_new = self.critic_1(torch.cat([states, actions_new], dim=1))
-        Q2_new = self.critic_2(torch.cat([states, actions_new], dim=1))
+        Q1_new = self.critic_1(states, actions_new)
+        Q2_new = self.critic_2(states, actions_new)
         Q_new = torch.min(Q1_new, Q2_new)
 
         actor_loss = (self.log_alpha.exp() * log_probs - Q_new).mean()
 
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
         self.actor_optimizer.step()
 
         # Update temperature
@@ -135,3 +143,16 @@ class SACAgent:
             target_param.data.copy_(
                 self.tau * param.data + (1 - self.tau) * target_param.data
             )
+
+    def validate_models(self):
+        """Validate that models are loaded and producing reasonable outputs"""
+        try:
+            test_state = torch.zeros((1, self.actor.state_dim)).to(self.device)
+            test_action, _ = self.actor.sample(test_state)
+            test_q1 = self.critic_1(test_state, test_action)
+            test_q2 = self.critic_2(test_state, test_action)
+            print(f"Model validation - Action shape: {test_action.shape}, Q values: {test_q1.item():.3f}, {test_q2.item():.3f}")
+            return True
+        except Exception as e:
+            print(f"Model validation failed: {e}")
+            return False

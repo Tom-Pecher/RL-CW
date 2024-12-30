@@ -1,5 +1,5 @@
 """
-Training script for the SAC agent.
+Training script for the Sunrise agent.
 """
 
 import torch
@@ -7,14 +7,14 @@ import os
 import wandb
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.sac.agent import SACAgent
+from agents.sunrise.agent import SUNRISEAgent
 
 from gym.wrappers.record_video import RecordVideo
 
 
 def train_agent(hardcore: bool, render: bool):
     """
-    Trains the SAC agent.
+    Trains the Sunrise agent.
     """
 
     num_episodes = 10000
@@ -23,7 +23,7 @@ def train_agent(hardcore: bool, render: bool):
     wandb.init(
         project="bipedal-walker",
         config={
-            "algorithm": "SAC",
+            "algorithm": "Sunrise",
             "environment": "BipedalWalker-v3",
             "hardcore": hardcore,
             "num_episodes": num_episodes,
@@ -34,7 +34,7 @@ def train_agent(hardcore: bool, render: bool):
     base_env = BipedalWalkerEnv(hardcore, render)
 
     # Create output dir for videos
-    video_dir = "videos/sac"
+    video_dir = "videos/sunrise"
     os.makedirs(video_dir, exist_ok=True)
 
     episode_trigger_count = 100
@@ -55,7 +55,7 @@ def train_agent(hardcore: bool, render: bool):
     action_dim = env_info['action_dim']
     max_action = float(env_info['action_high'][0])
 
-    agent = SACAgent(state_dim, action_dim, max_action, device)
+    agent = SUNRISEAgent(state_dim, action_dim, max_action, device)
 
     best_reward = float('-inf')
 
@@ -100,13 +100,17 @@ def train_agent(hardcore: bool, render: bool):
         if episode_reward > best_reward:
             best_reward = episode_reward
             model_dir = "models"
-            os.makedirs(os.path.join(model_dir, "sac"), exist_ok=True)
+            os.makedirs(os.path.join(model_dir, "sunrise"), exist_ok=True)
+
+            # Save actor
             torch.save(agent.actor.state_dict(),
-                       f"{model_dir}/sac/best_actor.pth")
-            torch.save(agent.critic_1.state_dict(),
-                       f"{model_dir}/sac/best_critic_1.pth")
-            torch.save(agent.critic_2.state_dict(),
-                       f"{model_dir}/sac/best_critic_2.pth")
+                      f"{model_dir}/sunrise/best_actor.pth")
+
+            # Save all critics in the ensemble
+            for i, critic in enumerate(agent.critics):
+                torch.save(critic.state_dict(),
+                          f"{model_dir}/sunrise/best_critic_{i}.pth")
+
             wandb.log({"best_reward": best_reward})
 
         # Save periodic checkpoints
@@ -114,19 +118,21 @@ def train_agent(hardcore: bool, render: bool):
             model_dir = "models"
             os.makedirs(model_dir, exist_ok=True)
 
-            checkpoint_path_actor = f"{model_dir}/sac/ep_{episode}_actor.pth"
-            checkpoint_path_critic1 = f"{model_dir}/sac/ep_{episode}_critic1.pth"
-            checkpoint_path_critic2 = f"{model_dir}/sac/ep_{episode}_critic2.pth"
-
-            # Save checkpoints
+            # Save actor checkpoint
+            checkpoint_path_actor = f"{model_dir}/sunrise/ep_{episode}_actor.pth"
             torch.save(agent.actor.state_dict(), checkpoint_path_actor)
-            torch.save(agent.critic_1.state_dict(), checkpoint_path_critic1)
-            torch.save(agent.critic_2.state_dict(), checkpoint_path_critic2)
+
+            # Save all critics checkpoints
+            checkpoint_paths_critics = []
+            for i, critic in enumerate(agent.critics):
+                path = f"{model_dir}/sunrise/ep_{episode}_critic_{i}.pth"
+                torch.save(critic.state_dict(), path)
+                checkpoint_paths_critics.append(path)
 
             # Log checkpoints to WandB
             wandb.save(checkpoint_path_actor)
-            wandb.save(checkpoint_path_critic1)
-            wandb.save(checkpoint_path_critic2)
+            for path in checkpoint_paths_critics:
+                wandb.save(path)
 
             # Log videos to WandB
             wandb.log({
