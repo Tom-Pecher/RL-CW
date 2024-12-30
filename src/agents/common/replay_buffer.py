@@ -37,5 +37,32 @@ class ReplayBuffer:
             torch.FloatTensor(done).reshape(-1, 1).to(device)
         )
 
+    def get_minibatches(self,batch_size: int,device: torch.device) -> list[tuple]:
+
+        batches = []
+
+        #Shuffle the buffer
+        buffer_list = list(self.buffer)
+        random.shuffle(buffer_list)
+        for i in range(0,len(self.buffer),batch_size):
+            
+            #break up shuffled data into batches
+
+            batch = buffer_list[i:i+batch_size]
+            batch = map(np.stack, zip(*batch))
+            state, action, reward, next_state, done = batch
+
+            # append batch to batches
+            batches.append((
+                torch.FloatTensor(state).to(device),
+                torch.FloatTensor(action).to(device),
+                torch.FloatTensor(reward).reshape(-1, 1).to(device),
+                torch.FloatTensor(next_state).to(device),
+                torch.FloatTensor(done).reshape(-1, 1).to(device)
+            )) 
+
+        return batches
+        
     def __len__(self) -> int:
         return len(self.buffer)
+
