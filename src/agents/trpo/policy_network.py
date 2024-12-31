@@ -7,7 +7,7 @@ class PolicyNetwork(nn.Module):
     """
     a stochastic mapping for states to actions.
     """
-    def __init__(self, state_dim: int, action_dim: int, max_action: float, hidden_sizes: List[int]):
+    def __init__(self, state_dim: int, action_dim: int, max_action: float, hidden_sizes: List[int], upper_bound: float, lower_bound: float):
         """
         policy network to be used as a module. 
         """
