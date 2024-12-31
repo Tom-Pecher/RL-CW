@@ -55,7 +55,9 @@ class TRPOAgent:
         initalizes all the hyper parameters and calls both networks 
         """
         # Determines capacity of the network
-        self.policy = PolicyNetwork(state_dim, action_dim, max_action, [64, 64]).to(device)
+        UPPER_BOUND = 2
+        LOWER_BOUND = -20
+        self.policy = PolicyNetwork(state_dim, action_dim, max_action, [64, 64], UPPER_BOUND, LOWER_BOUND).to(device)
         self.value = ValueNetwork(state_dim,[64,64]).to(device)
 
         # standard parameters for TRPO, 
