@@ -123,7 +123,7 @@ class TRPOAgent:
                 probabilitys = log_prob.cpu().item()
 
                 # get the flags
-                next_state, reward, terminated, truncated, dummy = env.step(action.cpu().numpy()[0])
+                next_state, reward, terminated, truncated, _ = env.step(action.cpu().numpy()[0])
                 # add the trajectory 
                 trajectory['states'].append(state)
                 trajectory['actions'].append(action.cpu().numpy()[0])
