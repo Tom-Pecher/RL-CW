@@ -13,7 +13,8 @@ class PolicyNetwork(nn.Module):
         """
         super().__init__()
         self.max_action = max_action
-
+    self.upper_bound = upper_bound
+    self.lower_bound = lower_bound
         # ARCHITECTURE 
         self.policy = nn.Sequential(
             nn.Linear(state_dim, hidden_sizes[0]),
