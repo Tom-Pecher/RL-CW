@@ -50,7 +50,7 @@ def train_agent(hardcore: bool, render: bool):
     env = RecordVideo(
         base_env.env,
         video_dir,
-        episode_trigger=lambda ep: ep % 1000 == 0,
+        episode_trigger=lambda ep: ep % 100 == 0,
         name_prefix="video"
     )
 
