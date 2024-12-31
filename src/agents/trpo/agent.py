@@ -183,7 +183,7 @@ class TRPOAgent:
                 advantages[t] = delta + self.GAMMA * self.GAE_LAMBDA * last_gae
             
             last_gae = advantages[t]
-            t = t -1  # iterate backwards 
+            t -= 1 # Iterate backwards
 
         # noramlise hte advantage. 
         mean = torch.mean(advantages)
