@@ -52,6 +52,10 @@ def main():
         case 'td3':
             from agents.td3.train import train_agent
 
+        case 'trpo':
+            from agents.trpo.train import train_agent
+            agent = train_agent(args.hardcore, args.render)
+
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
             return
