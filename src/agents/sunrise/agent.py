@@ -8,6 +8,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
 import copy
+from typing import Tuple
 
 from agents.common.replay_buffer import ReplayBuffer
 from agents.common.gaussian_policy import GaussianPolicy
@@ -21,7 +22,10 @@ class SUNRISEAgent:
         # SUNRISE specific parameters
         self.num_critics = 5  # Ensemble size
         self.temperature = 20.0  # Temperature for weighted Bellman backup
-        self.ucb_lambda = 1.0  # UCB exploration bonus coefficient
+        self.initial_ucb_lambda = 1.0  # Initial UCB exploration bonus coefficient
+        self.ucb_lambda = self.initial_ucb_lambda
+        self.min_ucb_lambda = 0.1  # Minimum UCB lambda value
+        self.ucb_decay = 0.995  # Decay rate for UCB lambda
 
         # Standard SAC parameters
         self.gamma = 0.99
@@ -30,10 +34,11 @@ class SUNRISEAgent:
         self.critic_lr = 3e-4
         self.actor_lr = 3e-4
         self.alpha_lr = 3e-4
+        self.max_grad_norm = 1.0
 
         # Initialize actor
         self.actor = GaussianPolicy(state_dim, action_dim, max_action).to(device)
-        self.actor.load_state_dict(torch.load("models/sunrise/ep_800_actor.pth", map_location=device, weights_only=True))
+        self.actor.load_state_dict(torch.load("models/sunrise/ep_300_actor.pth", map_location=device, weights_only=True))
 
 
         # Initialize ensemble of critics and their targets
@@ -46,7 +51,7 @@ class SUNRISEAgent:
             self.critics.append(critic)
             self.critic_targets.append(copy.deepcopy(critic))
             self.critic_optimizers.append(optim.Adam(critic.parameters(), lr=self.critic_lr))
-            self.critics[i].load_state_dict(torch.load(f"models/sunrise/ep_800_critic_{i}.pth", map_location=device, weights_only=True))
+            self.critics[i].load_state_dict(torch.load(f"models/sunrise/ep_300_critic_{i}.pth", map_location=device, weights_only=True))
 
         # Initialize actor optimizer
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
@@ -92,10 +97,19 @@ class SUNRISEAgent:
 
             return actions[best_action_idx].cpu().numpy().flatten()
 
-    def train(self) -> float:
-        """Perform one iteration of training."""
+    def train(self) -> Tuple[float, float, float]:
+        """
+        Perform one iteration of training.
+        
+        Returns:
+            Tuple[float, float, float]: Average critic loss, actor loss, and alpha loss
+        """
         if len(self.memory) < self.batch_size:
-            return 0
+            return None
+
+        # Decay UCB lambda
+        self.ucb_lambda = max(self.min_ucb_lambda, 
+                            self.ucb_lambda * self.ucb_decay)
 
         # Sample from replay buffer
         states, actions, rewards, next_states, dones = self.memory.sample(
@@ -126,6 +140,7 @@ class SUNRISEAgent:
 
             optimizer.zero_grad()
             critic_loss.backward()
+            torch.nn.utils.clip_grad_norm_(critic.parameters(), self.max_grad_norm)
             optimizer.step()
 
             total_critic_loss += critic_loss.item()
@@ -143,6 +158,7 @@ class SUNRISEAgent:
 
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
         self.actor_optimizer.step()
 
         # Update temperature
@@ -150,13 +166,16 @@ class SUNRISEAgent:
 
         self.alpha_optimizer.zero_grad()
         alpha_loss.backward()
+        torch.nn.utils.clip_grad_norm_([self.log_alpha], self.max_grad_norm)
         self.alpha_optimizer.step()
 
         # Update target networks
         for critic, critic_target in zip(self.critics, self.critic_targets):
             self._soft_update(critic, critic_target)
 
-        return total_critic_loss / self.num_critics
+        return (total_critic_loss / self.num_critics,
+                actor_loss.item(),
+                alpha_loss.item())
 
     def _soft_update(self, source: nn.Module, target: nn.Module) -> None:
         """Perform soft update of target network parameters."""
