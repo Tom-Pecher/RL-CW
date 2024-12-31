@@ -283,10 +283,7 @@ class TRPOAgent:
                                     self.policy.parameters())
         
         # convert back into a 1d vector again 
-        g = []
-        for grad in grads:
-            flat_grad = grad.view(-1)
-            g.append(flat_grad)
+        g = [grad.view(-1) for grad in grads]
         F_x = torch.cat(g) * -1 
 
         # Solve the Ax = -b equation using conjugate gradient
