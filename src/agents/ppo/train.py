@@ -17,18 +17,18 @@ from gym.wrappers.record_video import RecordVideo
 
 from typing import Tuple
 
-def run_policy(env: RecordVideo, agent: PPOAgent) -> tuple[list,list,list,list,bool]:
+def run_policy(env: RecordVideo, agent: PPOAgent) -> tuple[list,list,list,list,list,bool]:
 
-    tau = [[],[],[],[], False]
+    tau = [[],[],[],[],[], False]
     state, _ = env.reset()
     T = 2048
     for step in range(T):
-        action = agent.select_action(state)
+        action,log_prob = agent.select_action(state)
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 
         # Store transition in tau
-        for index, item in enumerate((state,action,reward,next_state)):
+        for index, item in enumerate((state,action,log_prob,reward,next_state)):
             tau[index].append(item)
         tau[-1] = terminated
 
@@ -39,7 +39,7 @@ def run_policy(env: RecordVideo, agent: PPOAgent) -> tuple[list,list,list,list,b
     return tuple(tau)
 
 
-def collect_trajectories(env:RecordVideo,agent: PPOAgent, num_traj: int) -> Tuple[ReplayBuffer, float]:
+def collect_trajectories(env:RecordVideo,agent: PPOAgent, min_steps: int) -> Tuple[ReplayBuffer, float]:
     """
     Generates a ReplayBuffer of different trajectories of the same policy  
     Args:
@@ -53,17 +53,19 @@ def collect_trajectories(env:RecordVideo,agent: PPOAgent, num_traj: int) -> Tupl
     buffer = ReplayBuffer(100000)
     total_reward = 0
     total_steps = 0
+    num_traj = 0 
     agent.training = True
-    for _ in range(num_traj):
+    while total_steps < min_steps:
         # Definite possibility of multithreading
-        states, actions, rewards, next_states, terminates = run_policy(env,agent)
+        states, actions, log_probs, rewards, next_states, terminates = run_policy(env,agent)
 
         advantages, rewards_to_go = agent.compute_gae(states,rewards,next_states,terminates)
-        for state, action, advantage, reward_to_go in zip(states,actions, advantages, rewards_to_go):
-            buffer.push(state,action,advantage,reward_to_go,-1)  
+        for state, action,log_prob, advantage, reward_to_go in zip(states,actions,log_probs, advantages, rewards_to_go):
+            buffer.push(state,action,log_prob, advantage,reward_to_go)  
 
         total_reward += sum(rewards) 
-
+        total_steps += len(states) 
+        num_traj += 1
     return buffer, total_reward / num_traj
 
 def train_agent(hardcore: bool, render: bool, device: torch.device):
@@ -96,7 +98,7 @@ def train_agent(hardcore: bool, render: bool, device: torch.device):
     for iteration in range(num_iterations):
 
         # Collects trajectories
-        buffer, avg_reward = collect_trajectories(env,agent,8)
+        buffer, avg_reward = collect_trajectories(env,agent,2048)
 
         # Updates the best reward if the avg traj reward is better 
 
@@ -105,9 +107,8 @@ def train_agent(hardcore: bool, render: bool, device: torch.device):
         for _ in range(agent.num_epoch):
             batches = buffer.get_minibatches(agent.batch_size,device) 
             for batch in batches:
-                states,actions, advantages,rewards_to_go, _ = batch
-                loss += agent.train_policy(states,actions,advantages)
-                loss += agent.train_value(states,rewards_to_go)
+                states,actions, log_probs, advantages,rewards_to_go  = batch
+                loss += agent.train(states,actions,log_probs,advantages,rewards_to_go)
 
         avg_loss = loss / (len(buffer) * agent.num_epoch)
 

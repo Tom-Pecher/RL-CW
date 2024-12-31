@@ -2,7 +2,7 @@
 Training script for the PPO agent.
 """
 
-from agents.common.value_net import ValueNetwork
+from agents.common.ppo_net import SharedNetwork, ValueNetwork, PolicyNetwork
 from agent import Agent
 from typing import Dict
 from agents.common.replay_buffer import ReplayBuffer
@@ -12,7 +12,7 @@ import torch.optim as optim
 import numpy as np
 
 class PPOAgent(Agent):
-    def __init__(self,env_info: dict, device: torch.device,epsilon: float = 0.1, gamma: float = 0.99, c1: float = 0.0, c2: float = 0.5, model_path: str | None = None) -> None:
+    def __init__(self,env_info: dict, device: torch.device,epsilon: float = 0.2, gamma: float = 0.99, c1: float = 0.5, c2: float = 0.5, model_path: str | None = None) -> None:
         """
             Initializes the agent taking into account hyperparams
         """
@@ -20,21 +20,34 @@ class PPOAgent(Agent):
         #Defining the hyperparams
         self.epsilon = epsilon 
         self.gamma = gamma
+        self.c1 = c1
+        self.c2 = c2
         self.gae_param = 0.95
         self.batch_size = 64
-        self.policy_lr = 3e-4
-        self.value_lr = 3e-4
-        self.exploration_noise = 0.1
-        self.num_epoch = 2
+        self.policy_lr = 0.01
+        self.value_lr = 1e-3
+        self.num_epoch = 10
 
         # Initializes agent
         state_dim = env_info['observation_dim']
         action_dim = env_info['action_dim']
         self.max_action = float(env_info['action_high'][0])
-        self.policy_net = Actor(state_dim, action_dim, self.max_action).to(device)
-        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=self.policy_lr)
-        self.value_net = ValueNetwork(state_dim).to(device)
-        self.value_optimizer  = optim.Adam(self.value_net.parameters(),lr=self.value_lr)
+        
+
+        self.shared_net = SharedNetwork(state_dim).to(device)
+
+        self.value_net = ValueNetwork(self.shared_net).to(device)
+        self.policy_net = PolicyNetwork(self.shared_net,action_dim,self.max_action).to(device)
+
+
+
+        self.optimizer = optim.Adam(
+            list(self.shared_net.parameters()) + 
+            list(self.value_net.parameters()) + 
+            list(self.policy_net.parameters()), 
+            lr=self.policy_lr
+        )
+       
         self.device = device
     
     @staticmethod
@@ -77,23 +90,17 @@ class PPOAgent(Agent):
             any: The action to take.
         """
         with torch.no_grad():
+
             state = torch.FloatTensor(state).reshape(1, -1).to(self.device)
-            action = self.policy_net(state)
-
+            dist = self.policy_net.get_distribution(state)
             if self.training:
-                noise = torch.normal(
-                    0,
-                    self.exploration_noise,
-                    size=action.shape,
-                    device=self.device
-                )
-                action = torch.clamp(
-                    action + noise,
-                    -self.max_action,
-                    self.max_action
-                )
+                action = dist.sample()
+            else:
+                action = dist.mean()
+        return action.cpu().numpy().flatten(), dist.log_prob(action).sum(-1).cpu().item()
 
-            return action.cpu().numpy().flatten()
+            
+
 
     def compute_gae(self,states,rewards,next_states, terminated):
         
@@ -130,25 +137,21 @@ class PPOAgent(Agent):
         return advantages, reward_to_go
 
     
-    def train_value(self, states, rewards_to_go) -> float:
-        self.value_optimizer.zero_grad()
-        vals = self.value_net(states)
-        value_loss = torch.mean((vals - rewards_to_go) ** 2)
-        value_loss.backward()
-        self.value_optimizer.step()
-        return value_loss.item()
-
-    def train_policy(self,states,actions, advantages) -> float:
+    def train(self,states,actions,log_probs, advantages,rewards_to_go) -> float:
         """
             Trains the policy network 
         """
 
-        self.policy_optimizer.zero_grad() 
-        r_t = self.policy_net(states) / (actions + 1e-6)
+        self.optimizer.zero_grad() 
+        new_log_prob = self.policy_net.get_distribution(states).log_prob(actions).sum(1)
+        r_t = torch.exp( new_log_prob - log_probs)
         r_t_clip = r_t.clamp(
             1 - self.epsilon, 1 + self.epsilon
         )
-        loss =  - torch.min(r_t * advantages, r_t_clip * advantages).mean() # we maximes it so the negative sign
+        loss_clip =  - torch.min(r_t * advantages, r_t_clip * advantages).mean() # we maximes it so the negative sign
+        vals = self.value_net(states)
+        loss_val = torch.mean((vals - rewards_to_go) ** 2)
+        loss = loss_clip + self.c1 * loss_val 
         loss.backward() 
-        self.policy_optimizer.step()
+        self.optimizer.step()
         return loss.item()
