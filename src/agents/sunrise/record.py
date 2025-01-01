@@ -1,14 +1,15 @@
 """
-Record a video of the agent.
+Record a video of the Sunrise agent.
 """
 
 import torch
 import os
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.dqn.agent import DQNAgent
+from agents.sunrise.agent import SUNRISEAgent
 
 from gym.wrappers.record_video import RecordVideo
+
 
 def record_agent(model_path: str, hardcore: bool = False) -> None:
     # Create environment
@@ -19,7 +20,7 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
         base_env.env,
         video_folder="output",
         episode_trigger=lambda _: True,
-        name_prefix="dqn"
+        name_prefix="sac"
     )
 
     # Setup device
@@ -30,18 +31,19 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
     env_info = base_env.get_env_info()
     state_dim = env_info['observation_dim']
     action_dim = env_info['action_dim']
+    max_action = float(env_info['action_high'][0])
 
     # Create agent and load model
-    agent = DQNAgent(state_dim, action_dim, device)
-    agent.policy_net.load_state_dict(torch.load(model_path, map_location=device))
-    agent.policy_net.eval()
+    agent = SUNRISEAgent(state_dim, action_dim, max_action, device)
+    agent.actor.load_state_dict(torch.load(model_path, map_location=device))
+    agent.actor.eval()
 
     # Run one episode
     state, _ = env.reset()
     episode_reward = 0
 
     while True:
-        action = agent.select_action(state)
+        action = agent.select_action(state, evaluate=True)
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 
@@ -52,3 +54,4 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
             break
 
     env.close()
+    print(f"Episode Reward: {episode_reward}")

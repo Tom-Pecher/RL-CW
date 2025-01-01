@@ -37,10 +37,17 @@ def main():
             from agents.ppo.record import record_agent
             record_agent(args.model, args.hardcore)
 
+        case 'sac':
+            from agents.sac.record import record_agent
+            record_agent(args.model, args.hardcore)
+
+        case 'td3':
+            from agents.td3.record import record_agent
+            record_agent(args.model, args.hardcore)
 
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
-            print("Valid agents are: [example, actor-critic, ddpg, dqn, ppo]", file=stderr)
+            print("Valid agents are: [actor-critic, ddpg, dqn, ppo, sac, td3]", file=stderr)
             return
 
 if __name__ == '__main__':

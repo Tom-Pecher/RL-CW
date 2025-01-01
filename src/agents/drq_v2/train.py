@@ -1,5 +1,5 @@
 """
-Training script for the deep Q-learning agent.
+Training script for the DrQ-v2 agent.
 """
 
 import torch
@@ -7,29 +7,34 @@ import os
 import wandb
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.dqn.agent import DQNAgent
+from agents.sac.agent import SACAgent
+
 from gym.wrappers.record_video import RecordVideo
+
 
 def train_agent(hardcore: bool, render: bool):
     """
-    Runs an example agent with a single episode.
+    Trains the DrQ-v2 agent.
     """
+
+    num_episodes = 1000
 
     # Initialize WandB
     wandb.init(
         project="bipedal-walker",
         config={
-            "algorithm": "DDPG",
+            "algorithm": "DrQ-v2",
             "environment": "BipedalWalker-v3",
             "hardcore": hardcore,
-            "num_episodes": 1000,
+            "num_episodes": num_episodes,
         }
     )
 
+    # Create environment
     base_env = BipedalWalkerEnv(hardcore, render)
 
     # Create output dir for videos
-    video_dir = "videos/dqn"
+    video_dir = "videos/drq_v2"
     os.makedirs(video_dir, exist_ok=True)
 
     episode_trigger_count = 100
@@ -38,7 +43,7 @@ def train_agent(hardcore: bool, render: bool):
     env = RecordVideo(
         base_env.env,
         video_dir,
-        episode_trigger = lambda ep: ep % episode_trigger_count == 0,
+        episode_trigger=lambda ep: (ep % episode_trigger_count == 0) or (ep == num_episodes - 1),
         name_prefix="video"
     )
 
@@ -48,10 +53,10 @@ def train_agent(hardcore: bool, render: bool):
     env_info = base_env.get_env_info()
     state_dim = env_info['observation_dim']
     action_dim = env_info['action_dim']
+    max_action = float(env_info['action_high'][0])
 
-    agent = DQNAgent(state_dim, action_dim, device)
+    agent = SACAgent(state_dim, action_dim, max_action, device)
 
-    num_episodes = 1000
     best_reward = float('-inf')
 
     for episode in range(num_episodes):
@@ -61,17 +66,14 @@ def train_agent(hardcore: bool, render: bool):
         steps = 0
 
         while True:
-            action = agent.select_action(state)
+            action = agent.select_action(state, evaluate=False)
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
-            # Store transition in replay buffer
             agent.memory.push(state, action, reward, next_state, done)
 
-            # Train the agent
-            if len(agent.memory) >= agent.batch_size:
-                loss = agent.train()
-                episode_loss += loss
+            loss = agent.train()
+            episode_loss += loss
 
             state = next_state
             episode_reward += reward
@@ -80,7 +82,7 @@ def train_agent(hardcore: bool, render: bool):
             if done:
                 break
 
-        avg_loss = (episode_loss / steps) if steps > 0 else 0
+        avg_loss = episode_loss / steps if steps > 0 else 0
 
         # Log metrics to WandB and print to console
         wandb.log({
@@ -90,38 +92,41 @@ def train_agent(hardcore: bool, render: bool):
             "steps": steps,
             "buffer_size": len(agent.memory)
         })
-        print(f"Log: Episode {episode + 1}/{num_episodes}, "
+        print(f"Episode {episode + 1}/{num_episodes}, "
             f"Reward: {episode_reward:.2f}, "
-            f"Avg loss: {avg_loss:.4f}, "
-            f"Epsilon: {agent.epsilon:.4f}")
+            f"Avg Loss: {avg_loss:.4f}")
 
         # Save best model
         if episode_reward > best_reward:
             best_reward = episode_reward
             model_dir = "models"
-            os.makedirs(os.path.join(model_dir, "dqn"), exist_ok=True)
-            torch.save(agent.policy_net.state_dict(),
-                       f"{model_dir}/dqn/best_policy.pth")
-            torch.save(agent.target_net.state_dict(),
-                       f"{model_dir}/dqn/best_target.pth")
+            os.makedirs(os.path.join(model_dir, "drq_v2"), exist_ok=True)
+            torch.save(agent.actor.state_dict(),
+                       f"{model_dir}/drq_v2/best_actor.pth")
+            torch.save(agent.critic_1.state_dict(),
+                       f"{model_dir}/drq_v2/best_critic_1.pth")
+            torch.save(agent.critic_2.state_dict(),
+                       f"{model_dir}/drq_v2/best_critic_2.pth")
             wandb.log({"best_reward": best_reward})
 
-
         # Save periodic checkpoints
-        if (episode) % episode_trigger_count == 0:
+        if (episode % episode_trigger_count == 0) or (episode == num_episodes - 1):
             model_dir = "models"
             os.makedirs(model_dir, exist_ok=True)
 
-            checkpoint_path_policy = f"{model_dir}/dqn/ep_{episode}_policy.pth"
-            checkpoint_path_target = f"{model_dir}/dqn/ep_{episode}_target.pth"
+            checkpoint_path_actor = f"{model_dir}/drq_v2/ep_{episode}_actor.pth"
+            checkpoint_path_critic1 = f"{model_dir}/drq_v2/ep_{episode}_critic1.pth"
+            checkpoint_path_critic2 = f"{model_dir}/drq_v2/ep_{episode}_critic2.pth"
 
             # Save checkpoints
-            torch.save(agent.policy_net.state_dict(), checkpoint_path_policy)
-            torch.save(agent.target_net.state_dict(), checkpoint_path_target)
+            torch.save(agent.actor.state_dict(), checkpoint_path_actor)
+            torch.save(agent.critic_1.state_dict(), checkpoint_path_critic1)
+            torch.save(agent.critic_2.state_dict(), checkpoint_path_critic2)
 
             # Log checkpoints to WandB
-            wandb.save(checkpoint_path_policy)
-            wandb.save(checkpoint_path_target)
+            wandb.save(checkpoint_path_actor)
+            wandb.save(checkpoint_path_critic1)
+            wandb.save(checkpoint_path_critic2)
 
             # Log videos to WandB
             wandb.log({

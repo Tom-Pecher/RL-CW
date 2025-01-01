@@ -3,10 +3,9 @@ Record a video of the agent.
 """
 
 import torch
-import os
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.dqn.agent import DQNAgent
+from agents.td3.agent import TD3Agent
 
 from gym.wrappers.record_video import RecordVideo
 
@@ -19,22 +18,28 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
         base_env.env,
         video_folder="output",
         episode_trigger=lambda _: True,
-        name_prefix="dqn"
+        name_prefix="td3"
     )
 
     # Setup device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if torch.backends.mps.is_available():
+        device = torch.device("mps") # added mps for apple people
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
     print(f"Using device: {device}")
 
     # Get environment info
     env_info = base_env.get_env_info()
     state_dim = env_info['observation_dim']
     action_dim = env_info['action_dim']
+    max_action = float(env_info['action_high'][0])
 
     # Create agent and load model
-    agent = DQNAgent(state_dim, action_dim, device)
-    agent.policy_net.load_state_dict(torch.load(model_path, map_location=device))
-    agent.policy_net.eval()
+    agent = TD3Agent(state_dim, action_dim, max_action, device)
+    agent.actor.load_state_dict(torch.load(model_path, map_location=device))
+    agent.actor.eval()
 
     # Run one episode
     state, _ = env.reset()
