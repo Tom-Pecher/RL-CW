@@ -32,6 +32,22 @@ class BipedalWalkerEnv:
         self.total_reward  = 0
         self.episode_count = 0
 
+        # Store observation bounds for normalization
+        self.obs_low = self.observation_space.low
+        self.obs_high = self.observation_space.high
+        self.obs_range = self.obs_high - self.obs_low
+
+    def _normalize_observation(self, observation: np.ndarray) -> np.ndarray:
+        """
+        Normalize observation to [-1, 1] range using stored bounds.
+
+        Args:
+            observation(np.ndarray): Raw observation from environment.
+
+        Returns:
+            np.ndarray: Normalized observation.
+        """
+        return 2.0 * (observation - self.obs_low) / self.obs_range - 1.0
 
     def reset(self) -> Tuple[np.ndarray, Dict]:
         """
@@ -42,8 +58,8 @@ class BipedalWalkerEnv:
         """
         self.current_step = 0
         self.total_reward = 0
-        return self.env.reset()
-
+        observation, info = self.env.reset()
+        return self._normalize_observation(observation), info
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
@@ -67,6 +83,9 @@ class BipedalWalkerEnv:
         # Take the step
         observation, reward, terminated, truncated, info = self.env.step(action)
 
+        # Normalize the observation
+        normalized_observation = self._normalize_observation(observation)
+
         self.total_reward += reward
 
         if terminated or truncated:
@@ -78,7 +97,7 @@ class BipedalWalkerEnv:
                 }
             })
 
-        return observation, reward, terminated, truncated, info
+        return normalized_observation, reward, terminated, truncated, info
 
 
     def render(self):

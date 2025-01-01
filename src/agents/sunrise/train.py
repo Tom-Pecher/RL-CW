@@ -62,7 +62,9 @@ def train_agent(hardcore: bool, render: bool):
     for episode in range(num_episodes):
         state, _ = env.reset()
         episode_reward = 0
-        episode_loss = 0
+        episode_critic_loss = 0
+        episode_actor_loss = 0
+        episode_alpha_loss = 0
         steps = 0
 
         while True:
@@ -72,8 +74,12 @@ def train_agent(hardcore: bool, render: bool):
 
             agent.memory.push(state, action, reward, next_state, done)
 
-            loss = agent.train()
-            episode_loss += loss
+            losses = agent.train()
+            if losses is not None:  # Add this check since train() returns 0 when buffer is not full enough
+                critic_loss, actor_loss, alpha_loss = losses
+                episode_critic_loss += critic_loss
+                episode_actor_loss += actor_loss
+                episode_alpha_loss += alpha_loss
 
             state = next_state
             episode_reward += reward
@@ -82,19 +88,28 @@ def train_agent(hardcore: bool, render: bool):
             if done:
                 break
 
-        avg_loss = episode_loss / steps if steps > 0 else 0
+        # Calculate average losses
+        avg_critic_loss = episode_critic_loss / steps if steps > 0 else 0
+        avg_actor_loss = episode_actor_loss / steps if steps > 0 else 0
+        avg_alpha_loss = episode_alpha_loss / steps if steps > 0 else 0
 
         # Log metrics to WandB and print to console
         wandb.log({
             "episode": episode + 1,
             "reward": episode_reward,
-            "average_loss": avg_loss,
+            "average_critic_loss": avg_critic_loss,
+            "average_actor_loss": avg_actor_loss,
+            "average_alpha_loss": avg_alpha_loss,
+            "ucb_lambda": agent.ucb_lambda,
+            "alpha": agent.log_alpha.exp().item(),
             "steps": steps,
             "buffer_size": len(agent.memory)
         })
         print(f"Episode {episode + 1}/{num_episodes}, "
-            f"Reward: {episode_reward:.2f}, "
-            f"Avg Loss: {avg_loss:.4f}")
+              f"Reward: {episode_reward:.2f}, "
+              f"Critic Loss: {avg_critic_loss:.4f}, "
+              f"Actor Loss: {avg_actor_loss:.4f}, "
+              f"Alpha Loss: {avg_alpha_loss:.4f}")
 
         # Save best model
         if episode_reward > best_reward:
