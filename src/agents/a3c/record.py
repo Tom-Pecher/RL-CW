@@ -1,8 +1,12 @@
+"""
+Record a video of the agent.
+"""
+
 import torch
 import os
 
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.a2c.agent import A2CAgent
+from agents.a3c.agent import A3CAgent
 
 from gym.wrappers.record_video import RecordVideo
 
@@ -15,7 +19,7 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
         base_env.env,
         video_folder="output",
         episode_trigger=lambda _: True,
-        name_prefix="a2c"
+        name_prefix="a3c"
     )
 
     # Setup device
@@ -26,12 +30,12 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
     env_info = base_env.get_env_info()
     state_dim = env_info['observation_dim']
     action_dim = env_info['action_dim']
-    max_action = float(env_info['action_high'][0])
+    max_action = float(env_info['action_high'][0])  # Get max_action from environment
 
     # Create agent and load model
-    agent = A2CAgent(state_dim, action_dim, max_action, device)
-    agent.shared_actor.load_state_dict(torch.load(model_path, map_location=device))
-    agent.shared_actor.eval()
+    agent = A3CAgent(state_dim, action_dim, max_action, device)  # Pass max_action to agent
+    agent.actor.load_state_dict(torch.load(model_path, map_location=device))
+    agent.actor.eval()
 
     # Run one episode
     state, _ = env.reset()
