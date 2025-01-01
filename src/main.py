@@ -27,9 +27,10 @@ def main():
 
         case 'example':
             from example import train_agent
-
-        case 'actor-critic':
-            from agents.actor_critic.train import train_agent
+            
+        case 'a2c':
+            from agents.a2c.train import train_agent
+            agent = train_agent(args.hardcore, args.render)
 
         case 'ddpg':
             from agents.ddpg.train import train_agent
