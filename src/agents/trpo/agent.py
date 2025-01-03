@@ -11,9 +11,8 @@ from .value_network import ValueNetwork
 # TRPO AGENT (read below its very helpful)
 # ------------------------------------------------------------------------------
 # if you want to better understand the code, check out the resources below! 
-# I used these to help in development of the code. 
-# If we end up describing the algorithm in the report these references can just be copied in. 
-# 
+# These resources I used and found very helpful in understanding the algorithms. 
+#
 # PAPER
 # https://people.engr.tamu.edu/guni/csce642/files/trpo.pdf
 #
@@ -26,9 +25,6 @@ from .value_network import ValueNetwork
 # https://www.youtube.com/watch?v=sCi1Lh_uZ7s
 #
 # BLOGS
-# Trust Region Policy Optimization (TRPO) and PyTorch: A Step-by-Step Guide (12/15/2024)
-# (Pseudocode - Structure of Implementation)
-# https://shorturl.at/62vFc 
 # Trust Region Policy Optimization Explained
 # Henry Wu (Mar 9, 2024)
 # https://shorturl.at/9K44l
@@ -294,8 +290,8 @@ class TRPOAgent:
     # STEP 6: CONJUGATE GRADIENT 
     #
     # I kept getting logic errors in my implementation of this so i used the below resource to help
-    # debug it.
-    # https://medium.com/@vladogim97/trpo-minimal-pytorch-implementation-859e46c4232e
+    # debug it, explained in README.
+    # https://shorturl.at/a5PZZ
     # Vladyslav Yazykov (May 24, 2020), Accessed Date (December 2024)
     ############################################################################
     def conjugate_gradient(self, k_matrix_vector_product, b, max_iterations=10, residual_tol=1e-6):

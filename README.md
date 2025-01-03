@@ -163,4 +163,48 @@ After this is done, you can go to github and create a new pull request with your
 
 [View Pull Requests](https://github.com/Tom-Pecher/RL-CW/pulls)
 
-# References and Resources
+# References
+Trust Region Policy Optimization (TRPO) and PyTorch: A Step-by-Step Guide 
+Sling Academy, Accessed Date (December 2024)
+https://shorturl.at/62vFc 
+How/What it was used for: Referenced pseudocode for algorithm structure and defining a policy network with PyTorch used for TRPO policy network.
+Modifications: Did not use directly; implemented a different policy architecture.
+
+TRPO — Minimal PyTorch implementation
+Vladyslav Yazykov (May 24, 2020), Accessed Date (December 2024)
+https://shorturl.at/a5PZZ
+How/What it was used for: To debug logic errors in my version of the conjugate gradient function (step 6) only.
+Modifications: No direct incorporation; updated variable initialization (Ax0, residual_0, p_k_next) to using .clone.
+
+# The Models 'Original' Papers 
+1. Deep Deterministic Policy Gradient (DDPG)
+Lillicrap, T.P., et al. (2015). Continuous control with deep reinforcement learning.
+arXiv preprint arXiv:1509.02971
+
+2. Proximal Policy Optimization (PPO)
+Schulman, J., et al. (2017). Proximal policy optimization algorithms.
+arXiv preprint arXiv:1707.06347
+
+3. Actor-Critic Algorithms (AC)
+Konda, V. & Tsitsiklis, J. (1999). Actor-critic algorithms.
+Advances in Neural Information Processing Systems, 12
+
+4. Asynchronous Advantage Actor-Critic (A3C)
+Mnih, V., et al. (2016). Asynchronous methods for deep reinforcement learning.
+arXiv preprint arXiv:1602.01783
+
+5. Self-Tuning Actor-Critic (STAC)
+Zahavy, T., et al. (2020). A self-tuning actor-critic algorithm.
+Advances in Neural Information Processing Systems, 33, pp. 20913--20924
+
+6. Trust Region Policy Optimization (TRPO)
+Schulman, J. (2015). Trust Region Policy Optimization.
+arXiv preprint arXiv:1502.05477
+
+7. Generalized Advantage Estimation (GAE)
+Schulman, J., et al. (2015). High-dimensional continuous control using generalized advantage estimation.
+arXiv preprint arXiv:1506.02438
+
+8. Ensemble Deep Deterministic Policy Gradient (ED2)
+Januszewski, P., et al. (2021). Continuous control with ensemble deep deterministic policy gradients.
+arXiv preprint arXiv:2111.15382
