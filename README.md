@@ -162,3 +162,5 @@ git push -u origin bugfix/dqn-fixed-indexing
 After this is done, you can go to github and create a new pull request with your branch. Make sure to tag someone else in to review it!
 
 [View Pull Requests](https://github.com/Tom-Pecher/RL-CW/pulls)
+
+# References and Resources
