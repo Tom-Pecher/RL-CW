@@ -367,7 +367,12 @@ class TRPOAgent:
         old_loss = self.compute_surrogate_loss(states, actions, advantages, old_probabilitys)
 
         # get the old params and distribution
-        old_parameters = torch.cat([p.data.view(-1) for p in self.policy.parameters()])
+        param_list = []
+        for p in self.policy.parameters():
+            flattened_param = p.data.view(-1)
+            param_list.append(flattened_param)
+        old_parameters = torch.cat(param_list)
+        
         old_dist = self.policy.get_distribution(states)
 
         for _ in range(max_depth):
