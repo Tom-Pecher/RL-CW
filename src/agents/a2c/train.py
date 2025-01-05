@@ -14,7 +14,7 @@ def train_agent(hardcore: bool, render: bool):
     """
     mp.set_start_method('spawn', force=True)
 
-    num_workers = 4  # Number of parallel workers
+    num_workers = 4
 
     # Initialize WandB
     wandb.init(

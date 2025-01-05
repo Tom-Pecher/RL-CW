@@ -23,7 +23,7 @@ class A3CAgent:
         self.entropy_coef = 0.01
         self.noise_level = 0.1
         self.memory = ReplayBuffer(1000000)
-        self.batch_size = 64
+        self.batch_size = 32
 
         # Actor and Critic models
         self.actor = Actor(state_dim, action_dim, max_action).to(device)
@@ -41,7 +41,7 @@ class A3CAgent:
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         with torch.no_grad():
             action = self.actor(state)
-            # Add exploration noise during training
+
             if self.training:
                 noise = torch.randn_like(action) * self.noise_level
                 action = torch.clamp(action + noise, -self.max_action, self.max_action)
@@ -100,7 +100,6 @@ class A3CAgent:
         actor_loss.backward()
         self.actor_optimizer.step()
 
-        # Logging
         self.total_steps += len(states)
 
         return {
