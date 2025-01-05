@@ -1,12 +1,10 @@
 """
-Record a video of the agent.
+Record a video of the TRPO agent.
 """
 
 import torch
-
 from bipedal_walker.environment import BipedalWalkerEnv
-from agents.td3.agent import TD3Agent
-
+from agents.trpo.agent import TRPOAgent
 from gym.wrappers.record_video import RecordVideo
 
 def record_agent(model_path: str, hardcore: bool = False) -> None:
@@ -18,12 +16,16 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
         base_env.env,
         video_folder="output",
         episode_trigger=lambda _: True,
-        name_prefix="td3"
+        name_prefix="trpo"
     )
 
     # Setup device
     if torch.backends.mps.is_available():
-        device = torch.device("mps") # added mps for apple people
+        choice = input("Do you want to use MPS? (y/n):")
+        if choice == "y":
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
     elif torch.cuda.is_available():
         device = torch.device("cuda")
     else:
@@ -37,23 +39,28 @@ def record_agent(model_path: str, hardcore: bool = False) -> None:
     max_action = float(env_info['action_high'][0])
 
     # Create agent and load model
-    agent = TD3Agent(state_dim, action_dim, max_action, device)
-    agent.actor.load_state_dict(torch.load(model_path, map_location=device))
-    agent.actor.eval()
+    agent = TRPOAgent(state_dim, action_dim, max_action, device)
+    agent.policy.load_state_dict(torch.load(model_path, map_location=device))
+    agent.policy.eval()
 
     # Run one episode
     state, _ = env.reset()
     episode_reward = 0
 
-    while True:
-        action = agent.select_action(state)
-        next_state, reward, terminated, truncated, _ = env.step(action)
-        done = terminated or truncated
+    with torch.no_grad(): 
+        while True:
+            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(device)
+            dist = agent.policy.get_distribution(state_tensor)
+            action = dist.mean.cpu().numpy()[0]
+            
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
 
-        state = next_state
-        episode_reward += reward
+            state = next_state
+            episode_reward += reward
 
-        if done:
-            break
+            if done:
+                break
 
+    print(f"Episode finished with reward: {episode_reward}")
     env.close()
