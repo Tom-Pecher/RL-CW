@@ -8,3 +8,9 @@ output/
 .pyo
 *.egg-info
 *.egg
+
+src/agents/a2c
+src/agents/a3c
+src/agents/dqn
+src/agents/ppo
+src/agents/ed2
