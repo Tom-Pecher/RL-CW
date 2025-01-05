@@ -451,11 +451,11 @@ class TRPOAgent:
             # Value loss = 1/N * Sum(state_value_pred - state_value_target)^2
             # value loss mean of squared diff between pred and target 
             value_loss_squared = (prediction - target).pow(2)
-            (value_loss_squared.mean()).backward() # backpropagate the loss 
+            self.value_optimizer.zero_grad()
+            ((value_loss_squared).mean()).backward() # backpropagate the loss 
 
             # normalise, gradinet         
             torch.nn.utils.clip_grad_norm_(self.value.parameters(), 5.0)
-
-            self.value_optimizer.zero_grad()
             self.value_optimizer.step()
+            
             value_epoch_count = value_epoch_count + 1
