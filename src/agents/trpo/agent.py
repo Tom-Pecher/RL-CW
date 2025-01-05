@@ -381,12 +381,9 @@ class TRPOAgent:
             kl = self.compute_kl_constraint(states, old_dist)
 
             # only accept if the kl is smaller than the max kl and loss is not smaller than 0 otherwise continute to backtrack. 
-            if kl > self.MAX_KL:
-               if (old_loss - new_loss) < 0: 
-                   step_size = self.BACKTRACK_COEFFICIENT * step_size
-               else:
-                  return step_size
-
+            if kl <= self.MAX_KL and (old_loss - new_loss) > 0: return step_size
+            step_size *= self.BACKTRACK_COEFFICIENT
+            
             return step_size
         return 0
 
