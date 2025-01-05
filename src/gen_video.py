@@ -45,6 +45,10 @@ def main():
             from agents.td3.record import record_agent
             record_agent(args.model, args.hardcore)
 
+        case 'trpo':
+            from agents.trpo.record import record_agent
+            record_agent(args.model, args.hardcore)
+
         case _:
             print(f"Invalid agent: {args.agent}", file=stderr)
             print("Valid agents are: [actor-critic, ddpg, dqn, ppo, sac, td3]", file=stderr)
