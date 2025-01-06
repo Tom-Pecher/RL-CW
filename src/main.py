@@ -47,6 +47,9 @@ def main():
         case 'ppo':
             from agents.ppo.train import train_agent
 
+        case 'random':
+            from agents.random.train import train_agent
+
         case 'sac':
             from agents.sac.train import train_agent
 
