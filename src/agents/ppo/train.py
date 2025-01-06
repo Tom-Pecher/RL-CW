@@ -1,6 +1,6 @@
 
 """
-Training script for the deep Q-learning agent.
+Training script for the PPO agent.
 """
 
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
