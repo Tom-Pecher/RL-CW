@@ -4,8 +4,8 @@ from typing import Tuple
 import torch.optim as optim
 
 # import from policy_network.py and value_network.py
-from .policy_network import PolicyNetwork
-from .value_network import ValueNetwork
+from agents.common.policy_network import PolicyNetwork
+from agents.common.value_network import ValueNetwork
 
 ################################################################################    
 # TRPO AGENT (read below its very helpful)
